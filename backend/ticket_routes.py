@@ -8,9 +8,6 @@ from auth import verify_password, get_password_hash, create_access_token, decode
 from datetime import datetime, timedelta
 from bson import ObjectId
 import uuid
-import qrcode
-import io
-import base64
 
 router = APIRouter()
 
