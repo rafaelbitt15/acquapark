@@ -233,12 +233,12 @@ async def create_payment_preference(
             },
             'external_reference': order_id,
             'back_urls': {
-                'success': f\"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/pagamento/sucesso\",
-                'failure': f\"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/pagamento/erro\",
-                'pending': f\"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/pagamento/pendente\"
+                'success': f"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/pagamento/sucesso",
+                'failure': f"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/pagamento/erro",
+                'pending': f"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/pagamento/pendente"
             },
             'auto_return': 'approved',
-            'notification_url': f\"{os.getenv('BACKEND_URL', 'http://localhost:8001')}/api/webhooks/mercadopago\"
+            'notification_url': f"{os.getenv('BACKEND_URL', 'http://localhost:8001')}/api/webhooks/mercadopago"
         }
         
         preference_response = sdk.preference().create(preference_data)
