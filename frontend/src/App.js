@@ -10,6 +10,10 @@ import AdminLogin from './pages/admin/AdminLogin';
 import AdminLayout from './pages/admin/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
 import AttractionsManager from './pages/admin/AttractionsManager';
+import TicketsManager from './pages/admin/TicketsManager';
+import ParkInfoManager from './pages/admin/ParkInfoManager';
+import TestimonialsManager from './pages/admin/TestimonialsManager';
+import FAQsManager from './pages/admin/FAQsManager';
 import ProtectedRoute from './pages/admin/ProtectedRoute';
 import { Toaster } from './components/ui/sonner';
 
@@ -69,12 +73,12 @@ function App() {
           }>
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="attractions" element={<AttractionsManager />} />
-            <Route path="tickets" element={<div className="text-center py-12">Página em desenvolvimento...</div>} />
-            <Route path="park-info" element={<div className="text-center py-12">Página em desenvolvimento...</div>} />
-            <Route path="testimonials" element={<div className="text-center py-12">Página em desenvolvimento...</div>} />
-            <Route path="faqs" element={<div className="text-center py-12">Página em desenvolvimento...</div>} />
-            <Route path="orders" element={<div className="text-center py-12">Página em desenvolvimento...</div>} />
-            <Route path="contacts" element={<div className="text-center py-12">Página em desenvolvimento...</div>} />
+            <Route path="tickets" element={<TicketsManager />} />
+            <Route path="park-info" element={<ParkInfoManager />} />
+            <Route path="testimonials" element={<TestimonialsManager />} />
+            <Route path="faqs" element={<FAQsManager />} />
+            <Route path="orders" element={<div className="text-center py-12">Página de pedidos - Visualização apenas</div>} />
+            <Route path="contacts" element={<div className="text-center py-12">Página de mensagens - Visualização apenas</div>} />
           </Route>
         </Routes>
       </BrowserRouter>
