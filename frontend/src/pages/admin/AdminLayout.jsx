@@ -39,15 +39,13 @@ export default function AdminLayout() {
         <div className="flex flex-col w-64" style={{ backgroundColor: '#2389a3' }}>
           {/* Logo */}
           <div className="flex items-center h-16 px-6 border-b border-white/10">
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white/20">
-                <Waves className="h-6 w-6 text-white" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-white font-bold">Admin Panel</span>
-                <span className="text-white/70 text-xs">Acqua Park</span>
-              </div>
-            </div>
+            <Link to="/" className="flex items-center">
+              <img 
+                src="/logo.png" 
+                alt="Acqua Park Admin" 
+                className="h-10 w-auto"
+              />
+            </Link>
           </div>
 
           {/* Navigation */}
