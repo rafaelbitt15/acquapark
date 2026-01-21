@@ -11,7 +11,8 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 # Import routes
-from routes import router
+from routes import router as admin_router
+from customer_routes import router as customer_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -36,7 +37,8 @@ app = FastAPI(
 )
 
 # Include all routes
-app.include_router(router)
+app.include_router(admin_router)
+app.include_router(customer_router)
 
 # CORS Configuration
 app.add_middleware(
