@@ -25,6 +25,7 @@ export default function AdminLayout() {
     { path: '/admin/park-info', label: 'Info do Parque', icon: Info },
     { path: '/admin/testimonials', label: 'Depoimentos', icon: MessageSquare },
     { path: '/admin/faqs', label: 'FAQs', icon: HelpCircle },
+    { path: '/admin/mercadopago', label: 'Mercado Pago', icon: ShoppingCart },
     { path: '/admin/orders', label: 'Pedidos', icon: ShoppingCart },
     { path: '/admin/contacts', label: 'Mensagens', icon: MessageSquare },
   ];
