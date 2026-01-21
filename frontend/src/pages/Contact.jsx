@@ -25,11 +25,11 @@ export default function Contact() {
     setIsSubmitting(true);
 
     try {
-      const result = await mockSendContact(formData);
+      await axios.post(`${API}/contact`, formData);
       
       toast({
         title: 'Mensagem Enviada!',
-        description: result.message
+        description: 'Recebemos sua mensagem. Responderemos em breve!'
       });
 
       // Reset form
