@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Waves } from 'lucide-react';
+import { Menu, X, Waves, User } from 'lucide-react';
 import { Button } from './ui/button';
+import { useCustomerAuth } from '../stores/customerAuthStore';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const { customer } = useCustomerAuth();
 
   const navigation = [
     { name: 'Início', href: '/' },
@@ -49,8 +51,32 @@ export default function Header() {
             ))}
           </div>
 
-          {/* CTA Button Desktop */}
-          <div className="hidden md:block">
+          {/* Desktop CTA & User */}
+          <div className="hidden md:flex md:items-center md:space-x-3">
+            {customer ? (
+              <Link to="/minha-conta">
+                <Button 
+                  variant="outline"
+                  className="font-semibold"
+                  style={{ borderColor: '#2389a3', color: '#2389a3' }}
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Minha Conta
+                </Button>
+              </Link>
+            ) : (
+              <Link to="/login">
+                <Button 
+                  variant="outline"
+                  className="font-semibold"
+                  style={{ borderColor: '#2389a3', color: '#2389a3' }}
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Entrar
+                </Button>
+              </Link>
+            )}
+            
             <Link to="/ingressos">
               <Button 
                 className="text-white font-semibold shadow-md hover:shadow-lg transition-all"
@@ -95,7 +121,32 @@ export default function Header() {
                   {item.name}
                 </Link>
               ))}
-              <div className="px-4 pt-2">
+              
+              <div className="px-4 pt-2 space-y-2">
+                {customer ? (
+                  <Link to="/minha-conta" onClick={() => setIsMenuOpen(false)}>
+                    <Button 
+                      variant="outline"
+                      className="w-full font-semibold"
+                      style={{ borderColor: '#2389a3', color: '#2389a3' }}
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Minha Conta
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                    <Button 
+                      variant="outline"
+                      className="w-full font-semibold"
+                      style={{ borderColor: '#2389a3', color: '#2389a3' }}
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Entrar
+                    </Button>
+                  </Link>
+                )}
+                
                 <Link to="/ingressos" onClick={() => setIsMenuOpen(false)}>
                   <Button 
                     className="w-full text-white font-semibold shadow-md"
