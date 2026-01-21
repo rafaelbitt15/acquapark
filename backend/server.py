@@ -40,6 +40,7 @@ app = FastAPI(
 # Include all routes
 app.include_router(admin_router)
 app.include_router(customer_router)
+app.include_router(ticket_router)
 
 # CORS Configuration
 app.add_middleware(
