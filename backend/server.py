@@ -13,6 +13,7 @@ load_dotenv(ROOT_DIR / '.env')
 # Import routes
 from routes import router as admin_router
 from customer_routes import router as customer_router
+from ticket_routes import router as ticket_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
