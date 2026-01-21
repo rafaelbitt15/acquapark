@@ -105,110 +105,119 @@ export default function Contact() {
         </div>
       </section>
 
-      {/* Contact Info & Form */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Contact Information */}
-            <div className="space-y-8">
-              <div>
-                <h2 className="text-3xl font-bold mb-6" style={{ color: '#2389a3' }}>
-                  Informações de Contato
-                </h2>
-                <p className="text-gray-600 mb-8">
-                  Entre em contato conosco através dos canais abaixo ou preencha o formulário. Responderemos o mais breve possível!
-                </p>
-              </div>
+      {loading ? (
+        <div className="py-20 bg-white">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#2389a3] mx-auto"></div>
+            <p className="mt-4 text-gray-600">Carregando informações...</p>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Contact Info & Form */}
+          <section className="py-20 bg-white">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                {/* Contact Information */}
+                <div className="space-y-8">
+                  <div>
+                    <h2 className="text-3xl font-bold mb-6" style={{ color: '#2389a3' }}>
+                      Informações de Contato
+                    </h2>
+                    <p className="text-gray-600 mb-8">
+                      Entre em contato conosco através dos canais abaixo ou preencha o formulário. Responderemos o mais breve possível!
+                    </p>
+                  </div>
 
-              <div className="space-y-6">
-                <Card className="hover:shadow-lg transition-all">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start space-x-4">
-                      <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #46bfec 0%, #2389a3 100%)' }}>
-                        <MapPin className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-lg mb-1">Endereço</h3>
-                        <p className="text-gray-600">{parkInfo.contact.address}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="hover:shadow-lg transition-all">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start space-x-4">
-                      <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f2ad28 0%, #e69500 100%)' }}>
-                        <Phone className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-lg mb-1">Telefone</h3>
-                        <a href={`tel:${parkInfo.contact.phone}`} className="text-gray-600 hover:text-[#2389a3] transition-colors">
-                          {parkInfo.contact.phone}
-                        </a>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="hover:shadow-lg transition-all">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start space-x-4">
-                      <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #46bfec 0%, #2389a3 100%)' }}>
-                        <Mail className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-lg mb-1">Email</h3>
-                        <a href={`mailto:${parkInfo.contact.email}`} className="text-gray-600 hover:text-[#2389a3] transition-colors">
-                          {parkInfo.contact.email}
-                        </a>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="hover:shadow-lg transition-all">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start space-x-4">
-                      <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f2ad28 0%, #e69500 100%)' }}>
-                        <Clock className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-lg mb-2">Horário de Funcionamento</h3>
-                        {parkInfo.hours.map((schedule, index) => (
-                          <div key={index} className="text-gray-600 text-sm mb-1">
-                            <span className="font-medium">{schedule.day}:</span> {schedule.hours}
+                  <div className="space-y-6">
+                    <Card className="hover:shadow-lg transition-all">
+                      <CardContent className="pt-6">
+                        <div className="flex items-start space-x-4">
+                          <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #46bfec 0%, #2389a3 100%)' }}>
+                            <MapPin className="h-6 w-6 text-white" />
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                          <div>
+                            <h3 className="font-semibold text-lg mb-1">Endereço</h3>
+                            <p className="text-gray-600">{parkInfo?.contact?.address}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
 
-              {/* Social Links */}
-              <div className="flex space-x-4">
-                <a 
-                  href={parkInfo.contact.instagram} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center space-x-2 px-6 py-3 rounded-lg text-white font-semibold hover:shadow-lg transition-all"
-                  style={{ background: 'linear-gradient(135deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%)' }}
-                >
-                  <Instagram className="h-5 w-5" />
-                  <span>Instagram</span>
-                </a>
-                <a 
-                  href={parkInfo.contact.whatsapp} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center space-x-2 px-6 py-3 rounded-lg bg-green-500 text-white font-semibold hover:bg-green-600 hover:shadow-lg transition-all"
-                >
-                  <MessageCircle className="h-5 w-5" />
-                  <span>WhatsApp</span>
-                </a>
-              </div>
-            </div>
+                    <Card className="hover:shadow-lg transition-all">
+                      <CardContent className="pt-6">
+                        <div className="flex items-start space-x-4">
+                          <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f2ad28 0%, #e69500 100%)' }}>
+                            <Phone className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-lg mb-1">Telefone</h3>
+                            <a href={`tel:${parkInfo?.contact?.phone}`} className="text-gray-600 hover:text-[#2389a3] transition-colors">
+                              {parkInfo?.contact?.phone}
+                            </a>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="hover:shadow-lg transition-all">
+                      <CardContent className="pt-6">
+                        <div className="flex items-start space-x-4">
+                          <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #46bfec 0%, #2389a3 100%)' }}>
+                            <Mail className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-lg mb-1">Email</h3>
+                            <a href={`mailto:${parkInfo?.contact?.email}`} className="text-gray-600 hover:text-[#2389a3] transition-colors">
+                              {parkInfo?.contact?.email}
+                            </a>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="hover:shadow-lg transition-all">
+                      <CardContent className="pt-6">
+                        <div className="flex items-start space-x-4">
+                          <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f2ad28 0%, #e69500 100%)' }}>
+                            <Clock className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-lg mb-2">Horário de Funcionamento</h3>
+                            {parkInfo?.hours?.map((schedule, index) => (
+                              <div key={index} className="text-gray-600 text-sm mb-1">
+                                <span className="font-medium">{schedule.day}:</span> {schedule.hours}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Social Links */}
+                  <div className="flex space-x-4">
+                    <a 
+                      href={parkInfo?.contact?.instagram} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center space-x-2 px-6 py-3 rounded-lg text-white font-semibold hover:shadow-lg transition-all"
+                      style={{ background: 'linear-gradient(135deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%)' }}
+                    >
+                      <Instagram className="h-5 w-5" />
+                      <span>Instagram</span>
+                    </a>
+                    <a 
+                      href={parkInfo?.contact?.whatsapp} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center space-x-2 px-6 py-3 rounded-lg bg-green-500 text-white font-semibold hover:bg-green-600 hover:shadow-lg transition-all"
+                    >
+                      <MessageCircle className="h-5 w-5" />
+                      <span>WhatsApp</span>
+                    </a>
+                  </div>
+                </div>
 
             {/* Contact Form */}
             <Card className="border-2" style={{ borderColor: '#46bfec' }}>
