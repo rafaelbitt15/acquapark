@@ -36,9 +36,11 @@ export default function CustomerLogin() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
-            <div className="flex items-center justify-center w-16 h-16 rounded-full" style={{ background: 'linear-gradient(135deg, #46bfec 0%, #2389a3 100%)' }}>
-              <Waves className="h-8 w-8 text-white" />
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="Acqua Park Prazeres da Serra" 
+              className="h-16 w-auto"
+            />
           </div>
           <div>
             <CardTitle className="text-2xl font-bold" style={{ color: '#2389a3' }}>Minha Conta</CardTitle>
