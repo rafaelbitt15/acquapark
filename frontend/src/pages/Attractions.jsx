@@ -1,11 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { attractions } from '../mock';
+import axios from 'axios';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
 export default function Attractions() {
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [attractions, setAttractions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAttractions();
+  }, []);
+
+  const fetchAttractions = async () => {
+    try {
+      const response = await axios.get(`${API}/attractions`);
+      setAttractions(response.data);
+    } catch (error) {
+      console.error('Error fetching attractions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const categories = [
     { value: 'all', label: 'Todas' },
@@ -17,6 +37,17 @@ export default function Attractions() {
   const filteredAttractions = selectedCategory === 'all' 
     ? attractions 
     : attractions.filter(a => a.category === selectedCategory);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p>Carregando atrações...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col">
