@@ -17,6 +17,7 @@ export default function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [parkInfo, setParkInfo] = useState(null);
   const [faqs, setFaqs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
