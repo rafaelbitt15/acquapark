@@ -9,15 +9,13 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full" style={{ background: 'linear-gradient(135deg, #46bfec 0%, #2389a3 100%)' }}>
-                <Waves className="h-6 w-6 text-white" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-lg font-bold" style={{ color: '#2389a3' }}>Acqua Park</span>
-                <span className="text-xs text-gray-500">Prazeres da Serra</span>
-              </div>
-            </div>
+            <Link to="/" className="flex items-center space-x-2">
+              <img 
+                src="/logo.png" 
+                alt="Acqua Park Prazeres da Serra" 
+                className="h-12 w-auto"
+              />
+            </Link>
             <p className="text-sm text-gray-600">
               {parkInfo.tagline}
             </p>
