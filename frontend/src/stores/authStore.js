@@ -5,15 +5,8 @@ import axios from 'axios';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-interface AuthState {
-  token: string | null;
-  user: { email: string; is_admin: boolean } | null;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  checkAuth: () => Promise<boolean>;
-}
-
-export const useAuth = create<AuthState>()(  persist(
+export const useAuth = create(
+  persist(
     (set, get) => ({
       token: null,
       user: null,
@@ -31,7 +24,7 @@ export const useAuth = create<AuthState>()(  persist(
           });
           
           set({ user: userResponse.data });
-        } catch (error: any) {
+        } catch (error) {
           throw new Error(error.response?.data?.detail || 'Erro ao fazer login');
         }
       },
