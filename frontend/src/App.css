@@ -1,34 +1,119 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* Acqua Park Custom Styles */
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
+/* Remove default App centering */
+.App {
+    text-align: left;
+}
+
+/* Custom animations */
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
+@keyframes slide-in-left {
+    from {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slide-in-right {
+    from {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.8s ease-out;
+}
+
+.animate-slide-in-left {
+    animation: slide-in-left 0.8s ease-out;
+}
+
+.animate-slide-in-right {
+    animation: slide-in-right 0.8s ease-out;
+}
+
+.animate-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* Hover effects for interactive elements */
+button, a {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+button:hover:not(:disabled), a:hover {
+    transform: translateY(-2px);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #46bfec 0%, #2389a3 100%);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #2389a3;
+}
+
+/* Selection color */
+::selection {
+    background-color: #46bfec;
     color: white;
 }
 
-.App-link {
-    color: #61dafb;
+::-moz-selection {
+    background-color: #46bfec;
+    color: white;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+/* Ensure images load smoothly */
+img {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Focus styles for accessibility */
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible {
+    outline: 2px solid #f2ad28;
+    outline-offset: 2px;
 }
