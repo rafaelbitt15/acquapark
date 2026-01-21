@@ -27,8 +27,12 @@ export default function Contact() {
   });
 
   useEffect(() => {
-    fetchParkInfo();
-    fetchFaqs();
+    const loadData = async () => {
+      setLoading(true);
+      await Promise.all([fetchParkInfo(), fetchFaqs()]);
+      setLoading(false);
+    };
+    loadData();
   }, []);
 
   const fetchParkInfo = async () => {
