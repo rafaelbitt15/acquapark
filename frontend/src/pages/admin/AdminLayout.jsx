@@ -2,7 +2,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
 import { 
   LayoutDashboard, Image, Ticket, Info, MessageSquare, 
-  HelpCircle, ShoppingCart, LogOut, Menu, X, Waves 
+  HelpCircle, ShoppingCart, LogOut, Menu, X, Waves, Calendar, Users 
 } from 'lucide-react';
 import { useAuth } from '../../stores/authStore';
 import { useState } from 'react';
@@ -21,7 +21,9 @@ export default function AdminLayout() {
   const menuItems = [
     { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/admin/attractions', label: 'Atrações', icon: Image },
-    { path: '/admin/tickets', label: 'Ingressos', icon: Ticket },
+    { path: '/admin/tickets', label: 'Tipos de Ingresso', icon: Ticket },
+    { path: '/admin/availability', label: 'Disponibilidade', icon: Calendar },
+    { path: '/admin/staff', label: 'Funcionários', icon: Users },
     { path: '/admin/park-info', label: 'Info do Parque', icon: Info },
     { path: '/admin/testimonials', label: 'Depoimentos', icon: MessageSquare },
     { path: '/admin/faqs', label: 'FAQs', icon: HelpCircle },
