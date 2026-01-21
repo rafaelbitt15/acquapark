@@ -2,10 +2,13 @@ import './App.css';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import CookieBanner from './components/CookieBanner';
 import Home from './pages/Home';
 import Attractions from './pages/Attractions';
 import Tickets from './pages/Tickets';
 import Contact from './pages/Contact';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 import CustomerRegister from './pages/CustomerRegister';
 import CustomerLogin from './pages/CustomerLogin';
 import CustomerAccount from './pages/CustomerAccount';
@@ -34,6 +37,7 @@ function App() {
                 <Home />
               </main>
               <Footer />
+              <CookieBanner />
               <Toaster />
             </>
           } />
@@ -44,6 +48,7 @@ function App() {
                 <Attractions />
               </main>
               <Footer />
+              <CookieBanner />
               <Toaster />
             </>
           } />
@@ -54,6 +59,7 @@ function App() {
                 <Tickets />
               </main>
               <Footer />
+              <CookieBanner />
               <Toaster />
             </>
           } />
@@ -64,7 +70,22 @@ function App() {
                 <Contact />
               </main>
               <Footer />
+              <CookieBanner />
               <Toaster />
+            </>
+          } />
+          
+          {/* Legal Pages */}
+          <Route path="/politica-privacidade" element={
+            <>
+              <PrivacyPolicy />
+              <CookieBanner />
+            </>
+          } />
+          <Route path="/termos-de-uso" element={
+            <>
+              <TermsOfService />
+              <CookieBanner />
             </>
           } />
 
