@@ -63,16 +63,19 @@ export default function CustomerAccount() {
   return (
     <>
       <Header />
-      <div className=\"min-h-screen bg-gray-50 py-12\">
-        <div className=\"container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl\">
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
           {/* Header */}
-          <div className=\"mb-8\">
-            <div className=\"flex items-center justify-between flex-wrap gap-4\">
+          <div className="mb-8">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
-                <h1 className=\"text-3xl font-bold\" style={{ color: '#2389a3' }}>Minha Conta</h1>
-                <p className=\"text-gray-600 mt-1\">Bem-vindo, {customer?.name}!</p>
+                <h1 className="text-3xl font-bold" style={{ color: '#2389a3' }}>Minha Conta</h1>
+                <p className="text-gray-600 mt-1">Bem-vindo, {customer?.name}!</p>
               </div>
-              <Button onClick={handleLogout} variant=\"outline\">\n                <LogOut className=\"h-4 w-4 mr-2\" />\n                Sair\n              </Button>
+              <Button onClick={handleLogout} variant="outline">
+                <LogOut className="h-4 w-4 mr-2" />
+                Sair
+              </Button>
             </div>
           </div>
 
