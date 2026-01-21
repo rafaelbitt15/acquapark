@@ -103,12 +103,12 @@ export default function Footer() {
               © {new Date().getFullYear()} Acqua Park Prazeres da Serra. Todos os direitos reservados.
             </p>
             <div className="flex space-x-6">
-              <a href="#" className="text-sm text-gray-600 hover:text-[#2389a3] transition-colors">
+              <Link to="/politica-privacidade" className="text-sm text-gray-600 hover:text-[#2389a3] transition-colors">
                 Política de Privacidade
-              </a>
-              <a href="#" className="text-sm text-gray-600 hover:text-[#2389a3] transition-colors">
+              </Link>
+              <Link to="/termos-de-uso" className="text-sm text-gray-600 hover:text-[#2389a3] transition-colors">
                 Termos de Uso
-              </a>
+              </Link>
             </div>
           </div>
         </div>
