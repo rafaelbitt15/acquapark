@@ -258,7 +258,7 @@ async def create_payment_preference(
         }
         
     except Exception as e:
-        print(f\"Error creating payment preference: {str(e)}\")
+        print(f"Error creating payment preference: {str(e)}")
         raise HTTPException(status_code=500, detail=f'Erro ao criar preferência de pagamento: {str(e)}')
 
 # ============= MERCADO PAGO WEBHOOK =============
