@@ -200,7 +200,7 @@ async def create_payment_preference(
         sdk = mercadopago.SDK(config['access_token'])
         
         # Create order in database
-        order_id = f\"ORDER-{uuid.uuid4().hex[:8].upper()}\"
+        order_id = f"ORDER-{uuid.uuid4().hex[:8].upper()}"
         order_dict = order_data.dict()
         order_dict['order_id'] = order_id
         order_dict['payment_status'] = 'pending'
