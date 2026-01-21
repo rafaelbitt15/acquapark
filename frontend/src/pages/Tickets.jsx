@@ -255,7 +255,7 @@ export default function Tickets() {
                     <div className="flex flex-wrap gap-2 mt-2">
                       {availableDates.slice(0, 5).map(d => (
                         <Badge key={d.date} variant="secondary" className="bg-green-100 text-green-800">
-                          {formatDate(d.date)} ({d.total_tickets - d.tickets_sold} vagas)
+                          {formatDate(d.date)}
                         </Badge>
                       ))}
                       {availableDates.length > 5 && (
@@ -422,14 +422,12 @@ export default function Tickets() {
                         className="w-full mt-1 p-3 border rounded-md focus:ring-2 focus:ring-cyan-500"
                       >
                         <option value="">Selecione uma data disponível</option>
-                        {availableDates.map(d => {
-                          const available = d.total_tickets - d.tickets_sold;
-                          return (
+                        {availableDates.map(d => (
                             <option key={d.date} value={d.date}>
-                              {formatDate(d.date)} - {available} vagas disponíveis
+                              {formatDate(d.date)}
                             </option>
-                          );
-                        })}
+                          )
+                        )}
                       </select>
                     </div>
 
@@ -449,12 +447,12 @@ export default function Tickets() {
                         {selectedDateInfo.available ? (
                           <p className="flex items-center gap-2">
                             <Check className="h-4 w-4" />
-                            Data disponível! {selectedDateInfo.remaining} vagas restantes.
+                            Data disponível!
                           </p>
                         ) : (
                           <p className="flex items-center gap-2">
                             <AlertCircle className="h-4 w-4" />
-                            {selectedDateInfo.message}
+                            Ingressos esgotados para esta data
                           </p>
                         )}
                       </div>
