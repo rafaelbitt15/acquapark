@@ -170,6 +170,25 @@ async def get_ticket(
     ticket['_id'] = str(ticket['_id'])
     return ticket
 
+@router.post('/api/admin/tickets')
+async def create_ticket(
+    ticket: TicketCreate,
+    current_user: dict = Depends(get_current_admin_user),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    # Check if ticket_id already exists
+    existing = await db.tickets.find_one({'ticket_id': ticket.ticket_id})
+    if existing:
+        raise HTTPException(status_code=400, detail='ID do ingresso já existe')
+    
+    ticket_dict = ticket.dict()
+    ticket_dict['is_active'] = True
+    ticket_dict['created_at'] = datetime.utcnow()
+    ticket_dict['updated_at'] = datetime.utcnow()
+    
+    result = await db.tickets.insert_one(ticket_dict)
+    return {'id': str(result.inserted_id), 'message': 'Ingresso criado com sucesso'}
+
 @router.put('/api/admin/tickets/{ticket_id}')
 async def update_ticket(
     ticket_id: str,
@@ -189,6 +208,22 @@ async def update_ticket(
         raise HTTPException(status_code=404, detail='Ingresso não encontrado')
     
     return {'message': 'Ingresso atualizado com sucesso'}
+
+@router.delete('/api/admin/tickets/{ticket_id}')
+async def delete_ticket(
+    ticket_id: str,
+    current_user: dict = Depends(get_current_admin_user),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    result = await db.tickets.update_one(
+        {'ticket_id': ticket_id},
+        {'$set': {'is_active': False, 'updated_at': datetime.utcnow()}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail='Ingresso não encontrado')
+    
+    return {'message': 'Ingresso removido com sucesso'}
 
 # ============= PARK INFO ROUTES =============
 
