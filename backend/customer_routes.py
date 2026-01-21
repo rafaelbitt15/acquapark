@@ -312,5 +312,5 @@ async def mercadopago_webhook(
         return {'status': 'success'}
         
     except Exception as e:
-        print(f\"Webhook error: {str(e)}\")
+        print(f"Webhook error: {str(e)}")
         return {'status': 'error', 'message': str(e)}
