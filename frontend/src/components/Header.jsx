@@ -24,13 +24,11 @@ export default function Header() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full" style={{ background: 'linear-gradient(135deg, #46bfec 0%, #2389a3 100%)' }}>
-              <Waves className="h-6 w-6 text-white" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-bold" style={{ color: '#2389a3' }}>Acqua Park</span>
-              <span className="text-xs text-gray-500">Prazeres da Serra</span>
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="Acqua Park Prazeres da Serra" 
+              className="h-12 w-auto"
+            />
           </Link>
 
           {/* Desktop Navigation */}
