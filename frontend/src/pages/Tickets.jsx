@@ -1,21 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Checkbox } from '../components/ui/checkbox';
 import { Badge } from '../components/ui/badge';
-import { Check, ShoppingCart, CalendarDays, CreditCard } from 'lucide-react';
-import { tickets, mockPurchaseTicket } from '../mock';
+import { Check, ShoppingCart, CalendarDays, CreditCard, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
 export default function Tickets() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [tickets, setTickets] = useState([]);
+  const [availableDates, setAvailableDates] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [selectedDateInfo, setSelectedDateInfo] = useState(null);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -24,6 +32,29 @@ export default function Tickets() {
     visitDate: '',
     acceptTerms: false
   });
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [ticketsRes, availabilityRes] = await Promise.all([
+        axios.get(`${API}/tickets`),
+        axios.get(`${API}/admin/ticket-availability`)
+      ]);
+      setTickets(ticketsRes.data);
+      // Filter only active dates with available tickets
+      const activeDates = availabilityRes.data.filter(d => 
+        d.is_active && (d.total_tickets - d.tickets_sold) > 0
+      );
+      setAvailableDates(activeDates);
+    } catch (error) {
+      toast({ title: 'Erro', description: 'Erro ao carregar dados', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAddToCart = (ticketId) => {
     setCart(prev => ({
@@ -46,9 +77,39 @@ export default function Tickets() {
 
   const calculateTotal = () => {
     return Object.entries(cart).reduce((total, [ticketId, quantity]) => {
-      const ticket = tickets.find(t => t.id === ticketId);
-      return total + (ticket.price * quantity);
+      const ticket = tickets.find(t => t.ticket_id === ticketId);
+      return total + (ticket ? ticket.price * quantity : 0);
     }, 0);
+  };
+
+  const getTotalQuantity = () => {
+    return Object.values(cart).reduce((sum, qty) => sum + qty, 0);
+  };
+
+  const handleDateChange = async (date) => {
+    setFormData({ ...formData, visitDate: date });
+    setSelectedDateInfo(null);
+    
+    if (!date) return;
+    
+    setCheckingAvailability(true);
+    try {
+      const totalQty = getTotalQuantity();
+      const response = await axios.get(`${API}/check-availability/${date}?quantity=${totalQty}`);
+      setSelectedDateInfo(response.data);
+      
+      if (!response.data.available) {
+        toast({
+          title: 'Data indisponível',
+          description: response.data.message || 'Não há ingressos suficientes para esta data',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      setSelectedDateInfo({ available: false, message: 'Erro ao verificar disponibilidade' });
+    } finally {
+      setCheckingAvailability(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -63,39 +124,60 @@ export default function Tickets() {
       return;
     }
 
+    if (!selectedDateInfo?.available) {
+      toast({
+        title: 'Data indisponível',
+        description: 'Por favor, selecione uma data com disponibilidade',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
-      const result = await mockPurchaseTicket({
-        ...formData,
-        tickets: cart,
-        total: calculateTotal()
+      // Prepare order items
+      const items = Object.entries(cart).map(([ticketId, quantity]) => {
+        const ticket = tickets.find(t => t.ticket_id === ticketId);
+        return {
+          ticketId: ticketId,
+          ticketName: ticket.name,
+          quantity: quantity,
+          unitPrice: ticket.price
+        };
       });
 
-      toast({
-        title: 'Sucesso!',
-        description: result.message
+      // Create payment preference
+      const response = await axios.post(`${API}/create-payment-preference`, {
+        customer: {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          document: formData.document
+        },
+        items: items,
+        total_amount: calculateTotal(),
+        visit_date: formData.visitDate
       });
 
-      // Reset form
-      setCart({});
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        document: '',
-        visitDate: '',
-        acceptTerms: false
-      });
-      setShowCheckout(false);
-
-      setTimeout(() => {
-        navigate('/');
-      }, 2000);
+      if (response.data.init_point) {
+        // Redirect to Mercado Pago
+        toast({
+          title: 'Redirecionando...',
+          description: 'Você será redirecionado para o Mercado Pago'
+        });
+        window.location.href = response.data.init_point;
+      } else {
+        toast({
+          title: 'Pedido criado!',
+          description: `Pedido ${response.data.order_id} criado. Configure o Mercado Pago para pagamentos.`
+        });
+      }
     } catch (error) {
+      const errorMsg = error.response?.data?.detail || 'Erro ao processar compra. Tente novamente.';
       toast({
         title: 'Erro',
-        description: 'Erro ao processar compra. Tente novamente.',
+        description: errorMsg,
         variant: 'destructive'
       });
     } finally {
@@ -105,6 +187,24 @@ export default function Tickets() {
 
   const cartItemCount = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
   const total = calculateTotal();
+
+  const getTicketIcon = (ticketId) => {
+    const icons = { 'adult': '👨‍👩‍👧‍👦', 'child': '👧', 'family': '👨‍👩‍👧‍👦', 'senior': '👴', 'vip': '⭐' };
+    return icons[ticketId] || '🎟️';
+  };
+
+  const formatDate = (dateStr) => {
+    const [year, month, day] = dateStr.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#2389a3' }} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col">
@@ -130,19 +230,59 @@ export default function Tickets() {
       {/* Tickets Section */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Available Dates Notice */}
+          {availableDates.length === 0 ? (
+            <Card className="max-w-2xl mx-auto mb-12 border-yellow-400 bg-yellow-50">
+              <CardContent className="py-6">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="h-6 w-6 text-yellow-600" />
+                  <div>
+                    <p className="font-semibold text-yellow-800">Vendas temporariamente indisponíveis</p>
+                    <p className="text-sm text-yellow-700">
+                      Não há datas disponíveis para compra no momento. Por favor, volte em breve!
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="max-w-2xl mx-auto mb-12 border-green-400 bg-green-50">
+              <CardContent className="py-4">
+                <div className="flex items-center gap-3">
+                  <CalendarDays className="h-5 w-5 text-green-600" />
+                  <div>
+                    <p className="font-semibold text-green-800">Datas disponíveis para visita:</p>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {availableDates.slice(0, 5).map(d => (
+                        <Badge key={d.date} variant="secondary" className="bg-green-100 text-green-800">
+                          {formatDate(d.date)} ({d.total_tickets - d.tickets_sold} vagas)
+                        </Badge>
+                      ))}
+                      {availableDates.length > 5 && (
+                        <Badge variant="secondary" className="bg-gray-100">
+                          +{availableDates.length - 5} datas
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {!showCheckout ? (
             <>
               {/* Tickets Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                 {tickets.map((ticket) => (
                   <Card 
-                    key={ticket.id} 
+                    key={ticket.ticket_id} 
                     className={`relative hover:shadow-xl transition-all ${
-                      ticket.id === 'family' ? 'border-2' : ''
+                      ticket.ticket_id === 'family' ? 'border-2' : ''
                     }`}
-                    style={ticket.id === 'family' ? { borderColor: '#f2ad28' } : {}}
+                    style={ticket.ticket_id === 'family' ? { borderColor: '#f2ad28' } : {}}
                   >
-                    {ticket.id === 'family' && (
+                    {ticket.ticket_id === 'family' && (
                       <Badge 
                         className="absolute -top-3 left-1/2 -translate-x-1/2 text-white"
                         style={{ backgroundColor: '#f2ad28' }}
@@ -151,7 +291,7 @@ export default function Tickets() {
                       </Badge>
                     )}
                     <CardHeader className="text-center pb-4">
-                      <div className="text-5xl mb-4">{ticket.icon}</div>
+                      <div className="text-5xl mb-4">{getTicketIcon(ticket.ticket_id)}</div>
                       <CardTitle className="text-2xl" style={{ color: '#2389a3' }}>
                         {ticket.name}
                       </CardTitle>
@@ -165,31 +305,33 @@ export default function Tickets() {
                         <p className="text-sm text-gray-500 mt-1">por pessoa</p>
                       </div>
 
-                      <ul className="space-y-3 mb-6">
-                        {ticket.features.map((feature, index) => (
-                          <li key={index} className="flex items-start space-x-2 text-sm">
-                            <Check className="h-5 w-5 flex-shrink-0" style={{ color: '#46bfec' }} />
-                            <span className="text-gray-600">{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      {ticket.features && ticket.features.length > 0 && (
+                        <ul className="space-y-3 mb-6">
+                          {ticket.features.map((feature, index) => (
+                            <li key={index} className="flex items-start space-x-2 text-sm">
+                              <Check className="h-5 w-5 flex-shrink-0" style={{ color: '#46bfec' }} />
+                              <span className="text-gray-600">{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
 
                       <div className="space-y-3">
-                        {cart[ticket.id] > 0 && (
+                        {cart[ticket.ticket_id] > 0 && (
                           <div className="flex items-center justify-center space-x-4 mb-2">
                             <Button 
                               variant="outline"
                               size="sm"
-                              onClick={() => handleRemoveFromCart(ticket.id)}
+                              onClick={() => handleRemoveFromCart(ticket.ticket_id)}
                               className="px-3"
                             >
                               −
                             </Button>
-                            <span className="font-semibold">{cart[ticket.id]}</span>
+                            <span className="font-semibold">{cart[ticket.ticket_id]}</span>
                             <Button 
                               variant="outline"
                               size="sm"
-                              onClick={() => handleAddToCart(ticket.id)}
+                              onClick={() => handleAddToCart(ticket.ticket_id)}
                               className="px-3"
                             >
                               +
@@ -197,11 +339,12 @@ export default function Tickets() {
                           </div>
                         )}
                         <Button
-                          onClick={() => handleAddToCart(ticket.id)}
+                          onClick={() => handleAddToCart(ticket.ticket_id)}
                           className="w-full text-white font-semibold"
                           style={{ background: 'linear-gradient(135deg, #46bfec 0%, #2389a3 100%)' }}
+                          disabled={availableDates.length === 0}
                         >
-                          {cart[ticket.id] ? 'Adicionar Mais' : 'Adicionar ao Carrinho'}
+                          {cart[ticket.ticket_id] ? 'Adicionar Mais' : 'Adicionar ao Carrinho'}
                         </Button>
                       </div>
                     </CardContent>
@@ -221,7 +364,8 @@ export default function Tickets() {
                   <CardContent>
                     <div className="space-y-3 mb-4">
                       {Object.entries(cart).map(([ticketId, quantity]) => {
-                        const ticket = tickets.find(t => t.id === ticketId);
+                        const ticket = tickets.find(t => t.ticket_id === ticketId);
+                        if (!ticket) return null;
                         return (
                           <div key={ticketId} className="flex justify-between items-center">
                             <span className="text-gray-700">
@@ -261,6 +405,62 @@ export default function Tickets() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Date Selection - FIRST */}
+                  <div className="p-4 rounded-lg border-2" style={{ borderColor: '#46bfec', backgroundColor: '#f0f9ff' }}>
+                    <h3 className="font-semibold text-lg flex items-center space-x-2 mb-4">
+                      <CalendarDays className="h-5 w-5" style={{ color: '#2389a3' }} />
+                      <span>Selecione a Data da Visita</span>
+                    </h3>
+                    
+                    <div>
+                      <Label htmlFor="visitDate">Data *</Label>
+                      <select
+                        id="visitDate"
+                        value={formData.visitDate}
+                        onChange={(e) => handleDateChange(e.target.value)}
+                        required
+                        className="w-full mt-1 p-3 border rounded-md focus:ring-2 focus:ring-cyan-500"
+                      >
+                        <option value="">Selecione uma data disponível</option>
+                        {availableDates.map(d => {
+                          const available = d.total_tickets - d.tickets_sold;
+                          return (
+                            <option key={d.date} value={d.date}>
+                              {formatDate(d.date)} - {available} vagas disponíveis
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+
+                    {checkingAvailability && (
+                      <div className="mt-3 flex items-center gap-2 text-gray-600">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-sm">Verificando disponibilidade...</span>
+                      </div>
+                    )}
+
+                    {selectedDateInfo && !checkingAvailability && (
+                      <div className={`mt-3 p-3 rounded-md ${
+                        selectedDateInfo.available 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {selectedDateInfo.available ? (
+                          <p className="flex items-center gap-2">
+                            <Check className="h-4 w-4" />
+                            Data disponível! {selectedDateInfo.remaining} vagas restantes.
+                          </p>
+                        ) : (
+                          <p className="flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4" />
+                            {selectedDateInfo.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   {/* Personal Information */}
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg flex items-center space-x-2">
@@ -306,34 +506,16 @@ export default function Tickets() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="document">CPF *</Label>
-                        <Input
-                          id="document"
-                          value={formData.document}
-                          onChange={(e) => setFormData({ ...formData, document: e.target.value })}
-                          placeholder="000.000.000-00"
-                          required
-                          className="mt-1"
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="visitDate" className="flex items-center space-x-1">
-                          <CalendarDays className="h-4 w-4" />
-                          <span>Data da Visita *</span>
-                        </Label>
-                        <Input
-                          id="visitDate"
-                          type="date"
-                          value={formData.visitDate}
-                          onChange={(e) => setFormData({ ...formData, visitDate: e.target.value })}
-                          required
-                          className="mt-1"
-                          min={new Date().toISOString().split('T')[0]}
-                        />
-                      </div>
+                    <div>
+                      <Label htmlFor="document">CPF *</Label>
+                      <Input
+                        id="document"
+                        value={formData.document}
+                        onChange={(e) => setFormData({ ...formData, document: e.target.value })}
+                        placeholder="000.000.000-00"
+                        required
+                        className="mt-1"
+                      />
                     </div>
                   </div>
 
@@ -342,7 +524,8 @@ export default function Tickets() {
                     <h3 className="font-semibold text-lg mb-4">Resumo do Pedido</h3>
                     <div className="space-y-2 mb-4">
                       {Object.entries(cart).map(([ticketId, quantity]) => {
-                        const ticket = tickets.find(t => t.id === ticketId);
+                        const ticket = tickets.find(t => t.ticket_id === ticketId);
+                        if (!ticket) return null;
                         return (
                           <div key={ticketId} className="flex justify-between text-sm">
                             <span>{ticket.name} x{quantity}</span>
@@ -350,6 +533,12 @@ export default function Tickets() {
                           </div>
                         );
                       })}
+                      {formData.visitDate && (
+                        <div className="flex justify-between text-sm text-gray-600 border-t pt-2">
+                          <span>Data da visita:</span>
+                          <span className="font-medium">{formatDate(formData.visitDate)}</span>
+                        </div>
+                      )}
                     </div>
                     <div className="border-t pt-3 flex justify-between font-bold text-lg">
                       <span>Total</span>
@@ -382,12 +571,15 @@ export default function Tickets() {
                     </Button>
                     <Button
                       type="submit"
-                      disabled={isProcessing}
+                      disabled={isProcessing || !selectedDateInfo?.available}
                       className="flex-1 text-white font-semibold"
                       style={{ background: 'linear-gradient(135deg, #f2ad28 0%, #e69500 100%)' }}
                     >
                       {isProcessing ? (
-                        'Processando...'
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Processando...
+                        </span>
                       ) : (
                         <span className="flex items-center justify-center space-x-2">
                           <CreditCard className="h-5 w-5" />
