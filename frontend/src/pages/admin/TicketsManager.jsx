@@ -1,0 +1,230 @@
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Textarea } from '../../components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
+import { Edit, DollarSign, Check } from 'lucide-react';
+import { useToast } from '../../hooks/use-toast';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
+
+export default function TicketsManager() {
+  const { toast } = useToast();
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editingTicket, setEditingTicket] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    price: 0,
+    description: '',
+    features: []
+  });
+  const [featureInput, setFeatureInput] = useState('');
+
+  useEffect(() => {
+    fetchTickets();
+  }, []);
+
+  const fetchTickets = async () => {
+    try {
+      const response = await axios.get(`${API}/tickets`);
+      setTickets(response.data);
+    } catch (error) {
+      toast({ title: 'Erro', description: 'Erro ao carregar ingressos', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (ticket) => {
+    setEditingTicket(ticket);
+    setFormData({
+      name: ticket.name,
+      price: ticket.price,
+      description: ticket.description,
+      features: ticket.features || []
+    });
+    setDialogOpen(true);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      await axios.put(`${API}/admin/tickets/${editingTicket.ticket_id}`, formData);
+      toast({ title: 'Sucesso', description: 'Ingresso atualizado com sucesso!' });
+      setDialogOpen(false);
+      resetForm();
+      fetchTickets();
+    } catch (error) {
+      toast({ title: 'Erro', description: 'Erro ao atualizar ingresso', variant: 'destructive' });
+    }
+  };
+
+  const addFeature = () => {
+    if (featureInput.trim()) {
+      setFormData({
+        ...formData,
+        features: [...formData.features, featureInput.trim()]
+      });
+      setFeatureInput('');
+    }
+  };
+
+  const removeFeature = (index) => {
+    setFormData({
+      ...formData,
+      features: formData.features.filter((_, i) => i !== index)
+    });
+  };
+
+  const resetForm = () => {
+    setEditingTicket(null);
+    setFormData({
+      name: '',
+      price: 0,
+      description: '',
+      features: []
+    });
+    setFeatureInput('');
+  };
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-64">Carregando...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold" style={{ color: '#2389a3' }}>Gerenciar Ingressos</h2>
+        <p className="text-gray-600">Atualize preços e informações dos ingressos</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {tickets.map((ticket) => (
+          <Card key={ticket._id} className="hover:shadow-lg transition-shadow">
+            <CardHeader className="text-center">
+              <div className="text-4xl mb-3">
+                {ticket.ticket_id === 'adult' ? '👨‍👩‍👧‍👦' : ticket.ticket_id === 'child' ? '👧' : '👨‍👩‍👧‍👦'}
+              </div>
+              <CardTitle style={{ color: '#2389a3' }}>{ticket.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center mb-4">
+                <p className="text-3xl font-bold" style={{ color: '#2389a3' }}>
+                  R$ {ticket.price.toFixed(2)}
+                </p>
+                <p className="text-sm text-gray-500">por pessoa</p>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">{ticket.description}</p>
+              <ul className="space-y-2 mb-4">
+                {ticket.features.map((feature, idx) => (
+                  <li key={idx} className="flex items-start text-sm">
+                    <Check className="h-4 w-4 mr-2 flex-shrink-0" style={{ color: '#46bfec' }} />
+                    <span className="text-gray-600">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button
+                onClick={() => handleEdit(ticket)}
+                className="w-full text-white"
+                style={{ background: 'linear-gradient(135deg, #46bfec 0%, #2389a3 100%)' }}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Editar
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={(open) => {
+        setDialogOpen(open);
+        if (!open) resetForm();
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Ingresso</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label>Nome do Ingresso *</Label>
+              <Input
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+            </div>
+
+            <div>
+              <Label>Preço (R$) *</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+                required
+              />
+            </div>
+
+            <div>
+              <Label>Descrição *</Label>
+              <Textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                rows={3}
+                required
+              />
+            </div>
+
+            <div>
+              <Label>Características</Label>
+              <div className="space-y-2">
+                {formData.features.map((feature, idx) => (
+                  <div key={idx} className="flex items-center space-x-2">
+                    <Input value={feature} disabled className="flex-1" />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => removeFeature(idx)}
+                      className="text-red-600"
+                    >
+                      Remover
+                    </Button>
+                  </div>
+                ))}
+                <div className="flex items-center space-x-2">
+                  <Input
+                    value={featureInput}
+                    onChange={(e) => setFeatureInput(e.target.value)}
+                    placeholder="Nova característica"
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addFeature())}
+                    className="flex-1"
+                  />
+                  <Button type="button" onClick={addFeature} variant="outline">
+                    Adicionar
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex space-x-2">
+              <Button type="submit" className="flex-1 text-white" style={{ background: 'linear-gradient(135deg, #46bfec 0%, #2389a3 100%)' }}>
+                Salvar Alterações
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
