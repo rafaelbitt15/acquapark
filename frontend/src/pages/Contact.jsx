@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -6,12 +6,17 @@ import { Textarea } from '../components/ui/textarea';
 import { Button } from '../components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion';
 import { MapPin, Phone, Mail, Clock, Send, Instagram, MessageCircle } from 'lucide-react';
-import { parkInfo, faqs, mockSendContact } from '../mock';
 import { useToast } from '../hooks/use-toast';
+import axios from 'axios';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
 export default function Contact() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [parkInfo, setParkInfo] = useState(null);
+  const [faqs, setFaqs] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -19,6 +24,29 @@ export default function Contact() {
     subject: '',
     message: ''
   });
+
+  useEffect(() => {
+    fetchParkInfo();
+    fetchFaqs();
+  }, []);
+
+  const fetchParkInfo = async () => {
+    try {
+      const response = await axios.get(`${API}/park-info`);
+      setParkInfo(response.data);
+    } catch (error) {
+      console.error('Error fetching park info:', error);
+    }
+  };
+
+  const fetchFaqs = async () => {
+    try {
+      const response = await axios.get(`${API}/faqs`);
+      setFaqs(response.data);
+    } catch (error) {
+      console.error('Error fetching FAQs:', error);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
