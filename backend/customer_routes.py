@@ -185,6 +185,22 @@ async def create_payment_preference(
     db: AsyncIOMotorDatabase = Depends(get_database)
 ):
     try:
+        # Check ticket availability for the date
+        availability = await db.ticket_availability.find_one({
+            'date': order_data.visit_date,
+            'is_active': True
+        })
+        
+        if availability:
+            total_quantity = sum(item['quantity'] for item in order_data.items)
+            available_tickets = availability['total_tickets'] - availability['tickets_sold']
+            
+            if available_tickets < total_quantity:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f'Apenas {available_tickets} ingressos disponíveis para esta data'
+                )
+        
         # Get Mercado Pago config
         config = await db.mercadopago_config.find_one({})
         if not config:
@@ -199,15 +215,27 @@ async def create_payment_preference(
         import mercadopago
         sdk = mercadopago.SDK(config['access_token'])
         
-        # Create order in database
+        # Create order in database with unique ticket code
         order_id = f"ORDER-{uuid.uuid4().hex[:8].upper()}"
+        ticket_code = f"TKT-{uuid.uuid4().hex[:12].upper()}"
+        
         order_dict = order_data.dict()
         order_dict['order_id'] = order_id
+        order_dict['ticket_code'] = ticket_code
         order_dict['payment_status'] = 'pending'
+        order_dict['validated'] = False
         order_dict['created_at'] = datetime.utcnow()
         order_dict['updated_at'] = datetime.utcnow()
         
         result = await db.orders.insert_one(order_dict)
+        
+        # Update ticket availability
+        if availability:
+            total_quantity = sum(item['quantity'] for item in order_data.items)
+            await db.ticket_availability.update_one(
+                {'date': order_data.visit_date},
+                {'$inc': {'tickets_sold': total_quantity}}
+            )
         
         # Get ticket names
         ticket_items = []
