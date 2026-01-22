@@ -599,3 +599,72 @@ async def upload_image(
         shutil.copyfileobj(file.file, buffer)
     
     return {'url': f'/uploads/{filename}', 'filename': filename}
+
+# ============= SITE STATS ROUTES =============
+
+@router.get('/api/site-stats')
+async def get_site_stats(db: AsyncIOMotorDatabase = Depends(get_database)):
+    """Get site statistics for display on home page"""
+    stats = await db.site_stats.find_one({})
+    if not stats:
+        # Return default stats if none configured
+        return {
+            'stats': [
+                {'icon': 'waves', 'value': '15+', 'label': 'Atrações'},
+                {'icon': 'sun', 'value': '365', 'label': 'Dias de Sol'},
+                {'icon': 'users', 'value': '50k+', 'label': 'Visitantes/ano'},
+                {'icon': 'shield', 'value': '100%', 'label': 'Segurança'}
+            ]
+        }
+    stats['_id'] = str(stats['_id'])
+    return stats
+
+@router.get('/api/admin/site-stats')
+async def get_admin_site_stats(
+    current_user: dict = Depends(get_current_admin_user),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """Get site statistics for admin editing"""
+    stats = await db.site_stats.find_one({})
+    if not stats:
+        # Create default stats
+        default_stats = {
+            'stats': [
+                {'icon': 'waves', 'value': '15+', 'label': 'Atrações'},
+                {'icon': 'sun', 'value': '365', 'label': 'Dias de Sol'},
+                {'icon': 'users', 'value': '50k+', 'label': 'Visitantes/ano'},
+                {'icon': 'shield', 'value': '100%', 'label': 'Segurança'}
+            ],
+            'created_at': datetime.utcnow(),
+            'updated_at': datetime.utcnow()
+        }
+        result = await db.site_stats.insert_one(default_stats)
+        default_stats['_id'] = str(result.inserted_id)
+        return default_stats
+    stats['_id'] = str(stats['_id'])
+    return stats
+
+@router.put('/api/admin/site-stats')
+async def update_site_stats(
+    stats_data: dict,
+    current_user: dict = Depends(get_current_admin_user),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """Update site statistics"""
+    update_data = {
+        'stats': stats_data.get('stats', []),
+        'updated_at': datetime.utcnow()
+    }
+    
+    # Check if stats exist
+    existing = await db.site_stats.find_one({})
+    if existing:
+        await db.site_stats.update_one(
+            {'_id': existing['_id']},
+            {'$set': update_data}
+        )
+    else:
+        update_data['created_at'] = datetime.utcnow()
+        await db.site_stats.insert_one(update_data)
+    
+    return {'message': 'Estatísticas atualizadas com sucesso'}
