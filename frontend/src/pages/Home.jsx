@@ -263,11 +263,14 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-              {attractions.map((attraction) => (
+              {attractions.map((attraction) => {
+                const imageUrl = attraction.image_url || attraction.image;
+                const fullImageUrl = imageUrl?.startsWith('http') ? imageUrl : `${BACKEND_URL}${imageUrl}`;
+                return (
                 <Card key={attraction._id} className="overflow-hidden hover:shadow-2xl transition-all hover:-translate-y-2">
                   <div className="h-48 overflow-hidden">
                     <img 
-                      src={attraction.image_url || 'https://images.pexels.com/photos/1093800/pexels-photo-1093800.jpeg'}
+                      src={fullImageUrl || 'https://images.pexels.com/photos/1093800/pexels-photo-1093800.jpeg'}
                       alt={attraction.name}
                       className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
                     />
@@ -280,7 +283,7 @@ export default function Home() {
                     <p className="text-gray-600 text-sm line-clamp-2">{attraction.description}</p>
                   </CardContent>
                 </Card>
-              ))}
+              )})}
             </div>
 
             <div className="text-center">
