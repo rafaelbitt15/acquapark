@@ -88,6 +88,7 @@ export default function AdminLogin() {
                 placeholder="••••••••"
                 required
                 disabled={isLoading}
+                data-testid="admin-login-password"
               />
             </div>
 
