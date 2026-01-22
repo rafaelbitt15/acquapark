@@ -2,11 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from customer_models import CustomerCreate, CustomerLogin, Customer, MercadoPagoConfig
 from models import Order, OrderCreate
-from auth import verify_password, get_password_hash, create_access_token
+from auth import verify_password, get_password_hash, create_access_token, decode_access_token
 from datetime import datetime
 from bson import ObjectId
 import uuid
 import os
+import secrets
 
 router = APIRouter()
 
