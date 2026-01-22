@@ -1,8 +1,43 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Phone, Mail, Instagram, Clock, Waves } from 'lucide-react';
-import { parkInfo } from '../mock';
+import axios from 'axios';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
+
+// Default data while loading
+const defaultParkInfo = {
+  tagline: 'Diversão para toda família',
+  hours: [
+    { day: 'Segunda a Sexta', hours: '9h às 17h' },
+    { day: 'Sábado e Domingo', hours: '8h às 18h' }
+  ],
+  contact: {
+    address: 'Carregando...',
+    phone: '',
+    email: '',
+    instagram: ''
+  }
+};
 
 export default function Footer() {
+  const [parkInfo, setParkInfo] = useState(defaultParkInfo);
+
+  useEffect(() => {
+    const fetchParkInfo = async () => {
+      try {
+        const response = await axios.get(`${API}/park-info`);
+        if (response.data) {
+          setParkInfo(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching park info:', error);
+      }
+    };
+    fetchParkInfo();
+  }, []);
+
   return (
     <footer className="bg-gradient-to-b from-gray-50 to-white border-t">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -52,7 +87,7 @@ export default function Footer() {
           <div>
             <h3 className="font-semibold text-gray-900 mb-4">Horário de Funcionamento</h3>
             <ul className="space-y-3">
-              {parkInfo.hours.map((schedule, index) => (
+              {parkInfo.hours && parkInfo.hours.map((schedule, index) => (
                 <li key={index} className="flex items-start space-x-2">
                   <Clock className="h-4 w-4 text-[#2389a3] mt-0.5 flex-shrink-0" />
                   <div className="text-sm">
@@ -68,28 +103,36 @@ export default function Footer() {
           <div>
             <h3 className="font-semibold text-gray-900 mb-4">Contato</h3>
             <ul className="space-y-3">
-              <li className="flex items-start space-x-2">
-                <MapPin className="h-4 w-4 text-[#2389a3] mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-gray-600">{parkInfo.contact.address}</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <Phone className="h-4 w-4 text-[#2389a3] mt-0.5 flex-shrink-0" />
-                <a href={`tel:${parkInfo.contact.phone}`} className="text-sm text-gray-600 hover:text-[#2389a3] transition-colors">
-                  {parkInfo.contact.phone}
-                </a>
-              </li>
-              <li className="flex items-start space-x-2">
-                <Mail className="h-4 w-4 text-[#2389a3] mt-0.5 flex-shrink-0" />
-                <a href={`mailto:${parkInfo.contact.email}`} className="text-sm text-gray-600 hover:text-[#2389a3] transition-colors">
-                  {parkInfo.contact.email}
-                </a>
-              </li>
-              <li className="flex items-start space-x-2">
-                <Instagram className="h-4 w-4 text-[#2389a3] mt-0.5 flex-shrink-0" />
-                <a href={parkInfo.contact.instagram} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-600 hover:text-[#2389a3] transition-colors">
-                  @acqua_park01
-                </a>
-              </li>
+              {parkInfo.contact?.address && (
+                <li className="flex items-start space-x-2">
+                  <MapPin className="h-4 w-4 text-[#2389a3] mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-gray-600">{parkInfo.contact.address}</span>
+                </li>
+              )}
+              {parkInfo.contact?.phone && (
+                <li className="flex items-start space-x-2">
+                  <Phone className="h-4 w-4 text-[#2389a3] mt-0.5 flex-shrink-0" />
+                  <a href={`tel:${parkInfo.contact.phone}`} className="text-sm text-gray-600 hover:text-[#2389a3] transition-colors">
+                    {parkInfo.contact.phone}
+                  </a>
+                </li>
+              )}
+              {parkInfo.contact?.email && (
+                <li className="flex items-start space-x-2">
+                  <Mail className="h-4 w-4 text-[#2389a3] mt-0.5 flex-shrink-0" />
+                  <a href={`mailto:${parkInfo.contact.email}`} className="text-sm text-gray-600 hover:text-[#2389a3] transition-colors">
+                    {parkInfo.contact.email}
+                  </a>
+                </li>
+              )}
+              {parkInfo.contact?.instagram && (
+                <li className="flex items-start space-x-2">
+                  <Instagram className="h-4 w-4 text-[#2389a3] mt-0.5 flex-shrink-0" />
+                  <a href={parkInfo.contact.instagram} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-600 hover:text-[#2389a3] transition-colors">
+                    @acqua_park01
+                  </a>
+                </li>
+              )}
             </ul>
           </div>
         </div>
