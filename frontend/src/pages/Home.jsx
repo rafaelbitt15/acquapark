@@ -4,10 +4,33 @@ import axios from 'axios';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { Waves, Sun, Users, Shield, Sparkles, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Waves, Sun, Users, Shield, Sparkles, Star, ChevronLeft, ChevronRight, Heart, ThumbsUp, Award } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+
+// Icon mapping for stats
+const iconMap = {
+  waves: Waves,
+  sun: Sun,
+  users: Users,
+  shield: Shield,
+  star: Star,
+  heart: Heart,
+  thumbsup: ThumbsUp,
+  award: Award
+};
+
+const iconColors = {
+  waves: '#46bfec',
+  sun: '#f2ad28',
+  users: '#46bfec',
+  shield: '#22c55e',
+  star: '#f2ad28',
+  heart: '#ef4444',
+  thumbsup: '#22c55e',
+  award: '#f2ad28'
+};
 
 // Default slide if none configured
 const defaultSlide = {
@@ -18,12 +41,21 @@ const defaultSlide = {
   button_link: '/ingressos'
 };
 
+// Default stats
+const defaultStats = [
+  { icon: 'waves', value: '15+', label: 'Atrações' },
+  { icon: 'sun', value: '365', label: 'Dias de Sol' },
+  { icon: 'users', value: '50k+', label: 'Visitantes/ano' },
+  { icon: 'shield', value: '100%', label: 'Segurança' }
+];
+
 export default function Home() {
   const [slides, setSlides] = useState([defaultSlide]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [parkInfo, setParkInfo] = useState(null);
   const [attractions, setAttractions] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
+  const [siteStats, setSiteStats] = useState(defaultStats);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,11 +75,12 @@ export default function Home() {
 
   const loadData = async () => {
     try {
-      const [slidesRes, parkRes, attractionsRes, testimonialsRes] = await Promise.all([
+      const [slidesRes, parkRes, attractionsRes, testimonialsRes, statsRes] = await Promise.all([
         axios.get(`${API}/hero-slides`).catch(() => ({ data: [] })),
         axios.get(`${API}/park-info`).catch(() => ({ data: null })),
         axios.get(`${API}/attractions`).catch(() => ({ data: [] })),
-        axios.get(`${API}/testimonials`).catch(() => ({ data: [] }))
+        axios.get(`${API}/testimonials`).catch(() => ({ data: [] })),
+        axios.get(`${API}/site-stats`).catch(() => ({ data: { stats: defaultStats } }))
       ]);
 
       if (slidesRes.data.length > 0) {
@@ -56,6 +89,9 @@ export default function Home() {
       setParkInfo(parkRes.data);
       setAttractions(attractionsRes.data.slice(0, 3));
       setTestimonials(testimonialsRes.data);
+      if (statsRes.data?.stats?.length > 0) {
+        setSiteStats(statsRes.data.stats);
+      }
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
