@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -10,6 +10,8 @@ import { useCustomerAuth } from '../stores/customerAuthStore';
 
 export default function CustomerLogin() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/minha-conta';
   const { login } = useCustomerAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,7 +25,7 @@ export default function CustomerLogin() {
 
     try {
       await login(email, password);
-      navigate('/minha-conta');
+      navigate(redirect);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -32,7 +34,7 @@ export default function CustomerLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #2389a3 0%, #46bfec 100%)' }}>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #2389a3 0%, #46bfec 100%)' }} data-testid="customer-login-page">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
@@ -54,7 +56,7 @@ export default function CustomerLogin() {
                 <Mail className="h-4 w-4" />
                 <span>Email</span>
               </Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" required disabled={isLoading} />
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" required disabled={isLoading} data-testid="login-email" />
             </div>
 
             <div>
@@ -62,12 +64,18 @@ export default function CustomerLogin() {
                 <Lock className="h-4 w-4" />
                 <span>Senha</span>
               </Label>
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required disabled={isLoading} />
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required disabled={isLoading} data-testid="login-password" />
+            </div>
+
+            <div className="text-right">
+              <Link to="/esqueci-senha" className="text-sm text-gray-500 hover:text-gray-700 hover:underline">
+                Esqueci minha senha
+              </Link>
             </div>
 
             {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
 
-            <Button type="submit" disabled={isLoading} className="w-full text-white font-semibold" style={{ background: 'linear-gradient(135deg, #f2ad28 0%, #e69500 100%)' }}>
+            <Button type="submit" disabled={isLoading} className="w-full text-white font-semibold" style={{ background: 'linear-gradient(135deg, #f2ad28 0%, #e69500 100%)' }} data-testid="login-submit">
               {isLoading ? 'Entrando...' : 'Entrar'}
             </Button>
 
