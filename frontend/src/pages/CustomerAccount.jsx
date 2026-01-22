@@ -5,8 +5,10 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { User, LogOut, Ticket, Calendar, CreditCard, QrCode, Copy, CheckCircle } from 'lucide-react';
+import { User, LogOut, Ticket, Calendar, CreditCard, QrCode, Copy, CheckCircle, Key, Eye, EyeOff } from 'lucide-react';
 import { useCustomerAuth } from '../stores/customerAuthStore';
 import { useToast } from '../hooks/use-toast';
 import Header from '../components/Header';
@@ -24,7 +26,21 @@ export default function CustomerAccount() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  
+  // Password change state
+  const [passwordData, setPasswordData] = useState({
+    current_password: '',
+    new_password: '',
+    confirm_password: ''
+  });
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false
+  });
 
   useEffect(() => {
     const verify = async () => {
@@ -54,6 +70,41 @@ export default function CustomerAccount() {
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    
+    if (passwordData.new_password !== passwordData.confirm_password) {
+      toast({ title: 'Erro', description: 'As senhas não coincidem', variant: 'destructive' });
+      return;
+    }
+    
+    if (passwordData.new_password.length < 6) {
+      toast({ title: 'Erro', description: 'A nova senha deve ter pelo menos 6 caracteres', variant: 'destructive' });
+      return;
+    }
+    
+    setChangingPassword(true);
+    
+    try {
+      await axios.post(`${API}/customers/change-password`, {
+        current_password: passwordData.current_password,
+        new_password: passwordData.new_password
+      }, { headers: getAuthHeaders() });
+      
+      toast({ title: 'Sucesso!', description: 'Senha alterada com sucesso' });
+      setPasswordDialogOpen(false);
+      setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
+    } catch (error) {
+      toast({ 
+        title: 'Erro', 
+        description: error.response?.data?.detail || 'Erro ao alterar senha', 
+        variant: 'destructive' 
+      });
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   const openTicketQR = (order) => {
