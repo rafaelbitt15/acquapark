@@ -3,7 +3,7 @@ import { Button } from '../../components/ui/button';
 import { 
   LayoutDashboard, Image, Ticket, Info, MessageSquare, 
   HelpCircle, ShoppingCart, LogOut, Menu, X, Waves,
-  Calendar, Users
+  Calendar, Users, ImageIcon
 } from 'lucide-react';
 import { useAuth } from '../../stores/authStore';
 import { useState } from 'react';
@@ -21,6 +21,7 @@ export default function AdminLayout() {
 
   const menuItems = [
     { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/admin/hero-slides', label: 'Banner Principal', icon: ImageIcon },
     { path: '/admin/attractions', label: 'Atrações', icon: Image },
     { path: '/admin/tickets', label: 'Ingressos', icon: Ticket },
     { path: '/admin/availability', label: 'Disponibilidade', icon: Calendar },
