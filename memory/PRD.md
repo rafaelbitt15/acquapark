@@ -38,8 +38,14 @@ Website completo e pronto para lançamento para o parque aquático "Acqua Park P
 ### 3. Painel Administrativo
 - [x] Login seguro (JWT)
 - [x] Dashboard com estatísticas
+- [x] **Gerenciamento do Banner Principal (Carrossel)**
+  - Upload de imagens
+  - Título e subtítulo personalizáveis
+  - Texto e link do botão configuráveis
+  - Reordenação de slides (setas)
+  - Ativar/desativar slides individualmente
 - [x] Gerenciamento de atrações (CRUD)
-- [x] **Gerenciamento de tipos de ingressos (CRUD completo)**
+- [x] Gerenciamento de tipos de ingressos (CRUD completo)
   - Adicionar novos tipos
   - Editar informações
   - Remover tipos
@@ -154,6 +160,14 @@ Website completo e pronto para lançamento para o parque aquático "Acqua Park P
 ---
 
 ## Changelog
+
+### 22/01/2026 (Sessão 3)
+- ✅ Implementado gerenciamento do Banner Principal no admin (`/admin/hero-slides`)
+- ✅ Carrossel de imagens na página inicial com transição automática (5s)
+- ✅ Upload de imagens ou uso de URL
+- ✅ Configuração de título, subtítulo, botão e link para cada slide
+- ✅ Navegação com setas e indicadores (dots)
+- ✅ Reordenação de slides via interface
 
 ### 22/01/2026 (Sessão 2)
 - ✅ Implementada página "Esqueci Minha Senha" (/esqueci-senha)
