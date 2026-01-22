@@ -12,11 +12,15 @@ import TermsOfService from './pages/TermsOfService';
 import CustomerRegister from './pages/CustomerRegister';
 import CustomerLogin from './pages/CustomerLogin';
 import CustomerAccount from './pages/CustomerAccount';
+import StaffLogin from './pages/StaffLogin';
+import CheckIn from './pages/CheckIn';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminLayout from './pages/admin/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
 import AttractionsManager from './pages/admin/AttractionsManager';
 import TicketsManager from './pages/admin/TicketsManager';
+import AvailabilityManager from './pages/admin/AvailabilityManager';
+import StaffManager from './pages/admin/StaffManager';
 import ParkInfoManager from './pages/admin/ParkInfoManager';
 import TestimonialsManager from './pages/admin/TestimonialsManager';
 import FAQsManager from './pages/admin/FAQsManager';
@@ -94,6 +98,10 @@ function App() {
           <Route path="/login" element={<CustomerLogin />} />
           <Route path="/minha-conta" element={<CustomerAccount />} />
 
+          {/* Staff Routes */}
+          <Route path="/funcionario/login" element={<StaffLogin />} />
+          <Route path="/check-in" element={<CheckIn />} />
+
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={
@@ -104,6 +112,8 @@ function App() {
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="attractions" element={<AttractionsManager />} />
             <Route path="tickets" element={<TicketsManager />} />
+            <Route path="availability" element={<AvailabilityManager />} />
+            <Route path="staff" element={<StaffManager />} />
             <Route path="park-info" element={<ParkInfoManager />} />
             <Route path="testimonials" element={<TestimonialsManager />} />
             <Route path="faqs" element={<FAQsManager />} />
