@@ -385,6 +385,93 @@ export default function CustomerAccount() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Change Password Dialog */}
+      <Dialog open={passwordDialogOpen} onOpenChange={(open) => {
+        setPasswordDialogOpen(open);
+        if (!open) setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Alterar Senha</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <div>
+              <Label>Senha Atual</Label>
+              <div className="relative mt-1">
+                <Input
+                  type={showPasswords.current ? 'text' : 'password'}
+                  value={passwordData.current_password}
+                  onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
+                  required
+                  data-testid="current-password-input"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                >
+                  {showPasswords.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <Label>Nova Senha</Label>
+              <div className="relative mt-1">
+                <Input
+                  type={showPasswords.new ? 'text' : 'password'}
+                  value={passwordData.new_password}
+                  onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
+                  placeholder="Mínimo 6 caracteres"
+                  minLength={6}
+                  required
+                  data-testid="new-password-input"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                >
+                  {showPasswords.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <Label>Confirmar Nova Senha</Label>
+              <div className="relative mt-1">
+                <Input
+                  type={showPasswords.confirm ? 'text' : 'password'}
+                  value={passwordData.confirm_password}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
+                  required
+                  data-testid="confirm-password-input"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                >
+                  {showPasswords.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="flex space-x-2 pt-2">
+              <Button 
+                type="submit" 
+                className="flex-1 text-white"
+                style={{ background: 'linear-gradient(135deg, #46bfec 0%, #2389a3 100%)' }}
+                disabled={changingPassword}
+                data-testid="save-password-btn"
+              >
+                {changingPassword ? 'Salvando...' : 'Salvar Nova Senha'}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setPasswordDialogOpen(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
