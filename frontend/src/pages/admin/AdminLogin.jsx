@@ -103,6 +103,7 @@ export default function AdminLogin() {
               disabled={isLoading}
               className="w-full text-white font-semibold"
               style={{ background: 'linear-gradient(135deg, #f2ad28 0%, #e69500 100%)' }}
+              data-testid="admin-login-submit"
             >
               {isLoading ? 'Entrando...' : 'Entrar'}
             </Button>
