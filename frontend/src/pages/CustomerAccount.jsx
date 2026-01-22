@@ -1,22 +1,30 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import { QRCodeSVG } from 'qrcode.react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { User, LogOut, Ticket, Calendar, CreditCard, Download } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { User, LogOut, Ticket, Calendar, CreditCard, QrCode, Copy, CheckCircle } from 'lucide-react';
 import { useCustomerAuth } from '../stores/customerAuthStore';
+import { useToast } from '../hooks/use-toast';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { Toaster } from '../components/ui/sonner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 export default function CustomerAccount() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { customer, logout, getAuthHeaders, checkAuth } = useCustomerAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const verify = async () => {
@@ -48,6 +56,21 @@ export default function CustomerAccount() {
     navigate('/');
   };
 
+  const openTicketQR = (order) => {
+    setSelectedOrder(order);
+    setQrDialogOpen(true);
+    setCopied(false);
+  };
+
+  const copyTicketCode = async () => {
+    if (selectedOrder?.ticket_code) {
+      await navigator.clipboard.writeText(selectedOrder.ticket_code);
+      setCopied(true);
+      toast({ title: 'Copiado!', description: 'Código copiado para a área de transferência' });
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   const getStatusBadge = (status) => {
     const statusMap = {
       'approved': { label: 'Aprovado', color: 'bg-green-100 text-green-700' },
@@ -60,10 +83,18 @@ export default function CustomerAccount() {
     return <Badge className={info.color}>{info.label}</Badge>;
   };
 
+  const getValidationBadge = (order) => {
+    if (order.validated) {
+      return <Badge className="bg-gray-200 text-gray-600">Utilizado</Badge>;
+    }
+    return null;
+  };
+
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gray-50 py-12">
+      <Toaster />
+      <div className="min-h-screen bg-gray-50 py-12" data-testid="customer-account-page">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
           <div className="mb-8">
             <div className="flex items-center justify-between flex-wrap gap-4">
@@ -71,7 +102,7 @@ export default function CustomerAccount() {
                 <h1 className="text-3xl font-bold" style={{ color: '#2389a3' }}>Minha Conta</h1>
                 <p className="text-gray-600 mt-1">Bem-vindo, {customer?.name}!</p>
               </div>
-              <Button onClick={handleLogout} variant="outline">
+              <Button onClick={handleLogout} variant="outline" data-testid="logout-btn">
                 <LogOut className="h-4 w-4 mr-2" />
                 Sair
               </Button>
@@ -150,15 +181,47 @@ export default function CustomerAccount() {
               ) : (
                 <div className="space-y-4">
                   {orders.map((order) => (
-                    <div key={order._id} className="border rounded-lg p-6 hover:shadow-md transition-shadow">
+                    <div key={order._id} className="border rounded-lg p-6 hover:shadow-md transition-shadow" data-testid={`order-card-${order.order_id}`}>
                       <div className="flex items-start justify-between flex-wrap gap-4">
                         <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-3">
+                          <div className="flex items-center space-x-3 mb-3 flex-wrap gap-2">
                             <p className="font-bold text-lg" style={{ color: '#2389a3' }}>
                               Pedido #{order.order_id}
                             </p>
                             {getStatusBadge(order.payment_status)}
+                            {getValidationBadge(order)}
                           </div>
+                          
+                          {/* Ticket Code Display */}
+                          {order.ticket_code && order.payment_status === 'approved' && (
+                            <div className="mb-4 p-3 bg-cyan-50 border border-cyan-200 rounded-lg">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-xs text-cyan-600 font-medium">Código do Ingresso</p>
+                                  <p className="font-mono font-bold text-lg" style={{ color: '#2389a3' }}>
+                                    {order.ticket_code}
+                                  </p>
+                                </div>
+                                {!order.validated && (
+                                  <Button
+                                    onClick={() => openTicketQR(order)}
+                                    size="sm"
+                                    className="text-white"
+                                    style={{ background: 'linear-gradient(135deg, #46bfec 0%, #2389a3 100%)' }}
+                                    data-testid={`view-qr-${order.order_id}`}
+                                  >
+                                    <QrCode className="h-4 w-4 mr-2" />
+                                    Ver QR Code
+                                  </Button>
+                                )}
+                              </div>
+                              {order.validated && (
+                                <p className="text-xs text-gray-500 mt-2">
+                                  Ingresso utilizado em {new Date(order.validated_at).toLocaleString('pt-BR')}
+                                </p>
+                              )}
+                            </div>
+                          )}
                           
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                             <div className="flex items-center space-x-2">
@@ -188,15 +251,6 @@ export default function CustomerAccount() {
                             </ul>
                           </div>
                         </div>
-
-                        {order.payment_status === 'approved' && (
-                          <div className="text-right">
-                            <Button variant="outline" size="sm">
-                              <Download className="h-4 w-4 mr-2" />
-                              Baixar Ingresso
-                            </Button>
-                          </div>
-                        )}
                       </div>
 
                       <div className="mt-4 text-xs text-gray-500">
@@ -211,6 +265,63 @@ export default function CustomerAccount() {
         </div>
       </div>
       <Footer />
+
+      {/* QR Code Dialog */}
+      <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center">Seu Ingresso</DialogTitle>
+          </DialogHeader>
+          {selectedOrder && (
+            <div className="text-center space-y-4">
+              <div className="p-4 bg-white rounded-lg border-2 border-dashed border-cyan-300 inline-block">
+                <QRCodeSVG 
+                  value={selectedOrder.ticket_code} 
+                  size={200}
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+              
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Código do Ingresso</p>
+                <div className="flex items-center justify-center space-x-2">
+                  <code className="font-mono text-lg font-bold px-3 py-1 bg-gray-100 rounded">
+                    {selectedOrder.ticket_code}
+                  </code>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={copyTicketCode}
+                    data-testid="copy-ticket-code"
+                  >
+                    {copied ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="text-sm text-gray-600 space-y-1">
+                <p><strong>Pedido:</strong> #{selectedOrder.order_id}</p>
+                <p><strong>Data da Visita:</strong> {new Date(selectedOrder.visit_date).toLocaleDateString('pt-BR')}</p>
+                <p><strong>Ingressos:</strong></p>
+                <ul>
+                  {selectedOrder.items.map((item, idx) => (
+                    <li key={idx}>
+                      {item.quantity}x {item.ticketId === 'adult' ? 'Inteiro' : item.ticketId === 'child' ? 'Meia-Entrada' : 'Pacote Família'}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="pt-4 border-t">
+                <p className="text-xs text-gray-500">
+                  Apresente este QR Code ou o código na entrada do parque
+                </p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

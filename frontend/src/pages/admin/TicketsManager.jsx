@@ -5,20 +5,24 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
-import { Edit, DollarSign, Check } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { Edit, Check, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '../../hooks/use-toast';
+import { useAuth } from '../../stores/authStore';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 export default function TicketsManager() {
   const { toast } = useToast();
+  const { getAuthHeaders } = useAuth();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingTicket, setEditingTicket] = useState(null);
+  const [isCreating, setIsCreating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
+    ticket_id: '',
     name: '',
     price: 0,
     description: '',
@@ -43,7 +47,9 @@ export default function TicketsManager() {
 
   const handleEdit = (ticket) => {
     setEditingTicket(ticket);
+    setIsCreating(false);
     setFormData({
+      ticket_id: ticket.ticket_id,
       name: ticket.name,
       price: ticket.price,
       description: ticket.description,
@@ -52,17 +58,60 @@ export default function TicketsManager() {
     setDialogOpen(true);
   };
 
+  const handleCreate = () => {
+    setEditingTicket(null);
+    setIsCreating(true);
+    setFormData({
+      ticket_id: '',
+      name: '',
+      price: 0,
+      description: '',
+      features: []
+    });
+    setDialogOpen(true);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      await axios.put(`${API}/admin/tickets/${editingTicket.ticket_id}`, formData);
-      toast({ title: 'Sucesso', description: 'Ingresso atualizado com sucesso!' });
+      if (isCreating) {
+        // Create new ticket
+        await axios.post(`${API}/admin/tickets`, formData, {
+          headers: getAuthHeaders()
+        });
+        toast({ title: 'Sucesso', description: 'Ingresso criado com sucesso!' });
+      } else {
+        // Update existing ticket
+        const { ticket_id, ...updateData } = formData;
+        await axios.put(`${API}/admin/tickets/${editingTicket.ticket_id}`, updateData, {
+          headers: getAuthHeaders()
+        });
+        toast({ title: 'Sucesso', description: 'Ingresso atualizado com sucesso!' });
+      }
       setDialogOpen(false);
       resetForm();
       fetchTickets();
     } catch (error) {
-      toast({ title: 'Erro', description: 'Erro ao atualizar ingresso', variant: 'destructive' });
+      toast({ 
+        title: 'Erro', 
+        description: error.response?.data?.detail || 'Erro ao salvar ingresso', 
+        variant: 'destructive' 
+      });
+    }
+  };
+
+  const handleDelete = async (ticketId) => {
+    if (!window.confirm('Tem certeza que deseja remover este tipo de ingresso?')) return;
+
+    try {
+      await axios.delete(`${API}/admin/tickets/${ticketId}`, {
+        headers: getAuthHeaders()
+      });
+      toast({ title: 'Sucesso', description: 'Ingresso removido com sucesso!' });
+      fetchTickets();
+    } catch (error) {
+      toast({ title: 'Erro', description: 'Erro ao remover ingresso', variant: 'destructive' });
     }
   };
 
@@ -85,7 +134,9 @@ export default function TicketsManager() {
 
   const resetForm = () => {
     setEditingTicket(null);
+    setIsCreating(false);
     setFormData({
+      ticket_id: '',
       name: '',
       price: 0,
       description: '',
@@ -94,23 +145,41 @@ export default function TicketsManager() {
     setFeatureInput('');
   };
 
+  const getTicketIcon = (ticketId) => {
+    if (ticketId === 'adult') return '👨‍👩‍👧‍👦';
+    if (ticketId === 'child') return '👧';
+    if (ticketId === 'family') return '👨‍👩‍👧‍👦';
+    return '🎫';
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center h-64">Carregando...</div>;
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold" style={{ color: '#2389a3' }}>Gerenciar Ingressos</h2>
-        <p className="text-gray-600">Atualize preços e informações dos ingressos</p>
+    <div className="space-y-6" data-testid="tickets-manager">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold" style={{ color: '#2389a3' }}>Gerenciar Ingressos</h2>
+          <p className="text-gray-600">Adicione, edite ou remova tipos de ingressos</p>
+        </div>
+        <Button 
+          onClick={handleCreate}
+          className="text-white"
+          style={{ background: 'linear-gradient(135deg, #46bfec 0%, #2389a3 100%)' }}
+          data-testid="add-ticket-btn"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Novo Tipo de Ingresso
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {tickets.map((ticket) => (
-          <Card key={ticket._id} className="hover:shadow-lg transition-shadow">
+          <Card key={ticket._id} className="hover:shadow-lg transition-shadow" data-testid={`ticket-card-${ticket.ticket_id}`}>
             <CardHeader className="text-center">
               <div className="text-4xl mb-3">
-                {ticket.ticket_id === 'adult' ? '👨‍👩‍👧‍👦' : ticket.ticket_id === 'child' ? '👧' : '👨‍👩‍👧‍👦'}
+                {getTicketIcon(ticket.ticket_id)}
               </div>
               <CardTitle style={{ color: '#2389a3' }}>{ticket.name}</CardTitle>
             </CardHeader>
@@ -130,35 +199,77 @@ export default function TicketsManager() {
                   </li>
                 ))}
               </ul>
-              <Button
-                onClick={() => handleEdit(ticket)}
-                className="w-full text-white"
-                style={{ background: 'linear-gradient(135deg, #46bfec 0%, #2389a3 100%)' }}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Editar
-              </Button>
+              <div className="flex space-x-2">
+                <Button
+                  onClick={() => handleEdit(ticket)}
+                  className="flex-1 text-white"
+                  style={{ background: 'linear-gradient(135deg, #46bfec 0%, #2389a3 100%)' }}
+                  data-testid={`edit-ticket-${ticket.ticket_id}`}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Editar
+                </Button>
+                <Button
+                  onClick={() => handleDelete(ticket.ticket_id)}
+                  variant="outline"
+                  className="text-red-600 border-red-300 hover:bg-red-50"
+                  data-testid={`delete-ticket-${ticket.ticket_id}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Edit Dialog */}
+      {tickets.length === 0 && (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-gray-500 mb-4">Nenhum tipo de ingresso cadastrado</p>
+            <Button 
+              onClick={handleCreate}
+              style={{ background: 'linear-gradient(135deg, #46bfec 0%, #2389a3 100%)' }}
+              className="text-white"
+            >
+              Criar Primeiro Ingresso
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Edit/Create Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => {
         setDialogOpen(open);
         if (!open) resetForm();
       }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar Ingresso</DialogTitle>
+            <DialogTitle>{isCreating ? 'Novo Tipo de Ingresso' : 'Editar Ingresso'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {isCreating && (
+              <div>
+                <Label>ID do Ingresso *</Label>
+                <Input
+                  value={formData.ticket_id}
+                  onChange={(e) => setFormData({ ...formData, ticket_id: e.target.value.toLowerCase().replace(/\s/g, '-') })}
+                  placeholder="Ex: promocional, vip, senior"
+                  required
+                  data-testid="ticket-id-input"
+                />
+                <p className="text-xs text-gray-500 mt-1">Identificador único (sem espaços)</p>
+              </div>
+            )}
+
             <div>
               <Label>Nome do Ingresso *</Label>
               <Input
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Ex: Ingresso Promocional"
                 required
+                data-testid="ticket-name-input"
               />
             </div>
 
@@ -167,9 +278,11 @@ export default function TicketsManager() {
               <Input
                 type="number"
                 step="0.01"
+                min="0"
                 value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
                 required
+                data-testid="ticket-price-input"
               />
             </div>
 
@@ -179,7 +292,9 @@ export default function TicketsManager() {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
+                placeholder="Descrição do tipo de ingresso"
                 required
+                data-testid="ticket-description-input"
               />
             </div>
 
@@ -206,6 +321,7 @@ export default function TicketsManager() {
                     placeholder="Nova característica"
                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addFeature())}
                     className="flex-1"
+                    data-testid="ticket-feature-input"
                   />
                   <Button type="button" onClick={addFeature} variant="outline">
                     Adicionar
@@ -215,8 +331,13 @@ export default function TicketsManager() {
             </div>
 
             <div className="flex space-x-2">
-              <Button type="submit" className="flex-1 text-white" style={{ background: 'linear-gradient(135deg, #46bfec 0%, #2389a3 100%)' }}>
-                Salvar Alterações
+              <Button 
+                type="submit" 
+                className="flex-1 text-white" 
+                style={{ background: 'linear-gradient(135deg, #46bfec 0%, #2389a3 100%)' }}
+                data-testid="save-ticket-btn"
+              >
+                {isCreating ? 'Criar Ingresso' : 'Salvar Alterações'}
               </Button>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancelar
