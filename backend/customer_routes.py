@@ -8,8 +8,82 @@ from bson import ObjectId
 import uuid
 import os
 import secrets
+import asyncio
+import resend
 
 router = APIRouter()
+
+# Configure Resend
+resend.api_key = os.environ.get('RESEND_API_KEY')
+SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://prazeres.preview.emergentagent.com')
+
+async def send_password_reset_email(to_email: str, reset_token: str, customer_name: str):
+    """Send password reset email using Resend"""
+    reset_link = f"{FRONTEND_URL}/esqueci-senha?token={reset_token}"
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>Recuperação de Senha</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2389a3; margin-bottom: 10px;">Acqua Park Prazeres da Serra</h1>
+        </div>
+        
+        <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
+            <h2 style="color: #2389a3; margin-top: 0;">Olá, {customer_name}!</h2>
+            
+            <p>Recebemos uma solicitação para redefinir a senha da sua conta.</p>
+            
+            <p>Clique no botão abaixo para criar uma nova senha:</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{reset_link}" 
+                   style="background: linear-gradient(135deg, #46bfec 0%, #2389a3 100%); 
+                          color: white; 
+                          padding: 15px 30px; 
+                          text-decoration: none; 
+                          border-radius: 5px; 
+                          font-weight: bold;
+                          display: inline-block;">
+                    Redefinir Minha Senha
+                </a>
+            </div>
+            
+            <p style="color: #666; font-size: 14px;">
+                Este link expira em <strong>1 hora</strong>.
+            </p>
+            
+            <p style="color: #666; font-size: 14px;">
+                Se você não solicitou esta alteração, ignore este email. Sua senha permanecerá a mesma.
+            </p>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; color: #999; font-size: 12px;">
+            <p>© 2026 Acqua Park Prazeres da Serra. Todos os direitos reservados.</p>
+            <p>Este é um email automático, por favor não responda.</p>
+        </div>
+    </body>
+    </html>
+    """
+    
+    params = {
+        "from": SENDER_EMAIL,
+        "to": [to_email],
+        "subject": "Recuperação de Senha - Acqua Park Prazeres da Serra",
+        "html": html_content
+    }
+    
+    try:
+        email = await asyncio.to_thread(resend.Emails.send, params)
+        return {"success": True, "email_id": email.get("id")}
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return {"success": False, "error": str(e)}
 
 async def get_database(request: Request) -> AsyncIOMotorDatabase:
     return request.app.db
