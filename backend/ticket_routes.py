@@ -97,6 +97,30 @@ async def check_availability(
     else:
         return {'available': False, 'remaining': available_tickets, 'message': f'Apenas {available_tickets} ingressos disponíveis'}
 
+# Get available dates for public (customer selection)
+@router.get('/api/available-dates')
+async def get_available_dates(
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """Get all dates that have available tickets for customers"""
+    today = datetime.now().strftime('%Y-%m-%d')
+    
+    availabilities = await db.ticket_availability.find({
+        'date': {'$gte': today},
+        'is_active': True
+    }).sort('date', 1).to_list(100)
+    
+    available_dates = []
+    for item in availabilities:
+        available_tickets = item['total_tickets'] - item.get('tickets_sold', 0)
+        if available_tickets > 0:
+            available_dates.append({
+                'date': item['date'],
+                'available': available_tickets
+            })
+    
+    return available_dates
+
 # ============= STAFF MANAGEMENT (ADMIN) =============
 
 @router.post('/api/admin/staff')
