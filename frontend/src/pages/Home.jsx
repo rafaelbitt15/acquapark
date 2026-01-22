@@ -253,34 +253,19 @@ export default function Home() {
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="flex justify-center mb-2">
-                <Waves className="w-8 h-8" style={{ color: '#46bfec' }} />
-              </div>
-              <p className="text-3xl font-bold" style={{ color: '#2389a3' }}>15+</p>
-              <p className="text-gray-600">Atrações</p>
-            </div>
-            <div className="text-center">
-              <div className="flex justify-center mb-2">
-                <Sun className="w-8 h-8" style={{ color: '#f2ad28' }} />
-              </div>
-              <p className="text-3xl font-bold" style={{ color: '#2389a3' }}>365</p>
-              <p className="text-gray-600">Dias de Sol</p>
-            </div>
-            <div className="text-center">
-              <div className="flex justify-center mb-2">
-                <Users className="w-8 h-8" style={{ color: '#46bfec' }} />
-              </div>
-              <p className="text-3xl font-bold" style={{ color: '#2389a3' }}>50k+</p>
-              <p className="text-gray-600">Visitantes/ano</p>
-            </div>
-            <div className="text-center">
-              <div className="flex justify-center mb-2">
-                <Shield className="w-8 h-8" style={{ color: '#22c55e' }} />
-              </div>
-              <p className="text-3xl font-bold" style={{ color: '#2389a3' }}>100%</p>
-              <p className="text-gray-600">Segurança</p>
-            </div>
+            {siteStats.map((stat, index) => {
+              const IconComponent = iconMap[stat.icon] || Waves;
+              const color = iconColors[stat.icon] || '#46bfec';
+              return (
+                <div key={index} className="text-center">
+                  <div className="flex justify-center mb-2">
+                    <IconComponent className="w-8 h-8" style={{ color }} />
+                  </div>
+                  <p className="text-3xl font-bold" style={{ color: '#2389a3' }}>{stat.value}</p>
+                  <p className="text-gray-600">{stat.label}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
