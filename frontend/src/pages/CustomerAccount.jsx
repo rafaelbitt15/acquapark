@@ -185,6 +185,18 @@ export default function CustomerAccount() {
                   <p className="text-sm text-gray-500">CPF</p>
                   <p className="font-semibold">{customer?.document}</p>
                 </div>
+                <div className="pt-3 border-t">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setPasswordDialogOpen(true)}
+                    className="w-full"
+                    data-testid="change-password-btn"
+                  >
+                    <Key className="h-4 w-4 mr-2" />
+                    Alterar Senha
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
