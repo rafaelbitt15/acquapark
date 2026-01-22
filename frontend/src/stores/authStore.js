@@ -63,20 +63,25 @@ export const useAuth = create(
 // Axios interceptor to add token to all requests
 axios.interceptors.request.use(
   (config) => {
-    const token = useAuth.getState().token;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Only add admin token if it's an admin endpoint
+    if (config.url?.includes('/api/admin') || config.url?.includes('/api/auth')) {
+      const token = useAuth.getState().token;
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Axios interceptor to handle 401 errors
+// Axios interceptor to handle 401 errors - ONLY for admin routes
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Only redirect to admin login if it was an admin request
+    const isAdminRequest = error.config?.url?.includes('/api/admin') || error.config?.url?.includes('/api/auth/');
+    if (error.response?.status === 401 && isAdminRequest) {
       useAuth.getState().logout();
       window.location.href = '/admin/login';
     }
