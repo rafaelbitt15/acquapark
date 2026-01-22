@@ -13,8 +13,21 @@ import resend
 
 router = APIRouter()
 
-# Configure Resend
-resend.api_key = os.environ.get('RESEND_API_KEY')
+# Configure Resend - load directly from file if env var not set
+def get_resend_api_key():
+    key = os.environ.get('RESEND_API_KEY')
+    if not key:
+        try:
+            with open('/app/backend/.env', 'r') as f:
+                for line in f:
+                    if line.startswith('RESEND_API_KEY='):
+                        key = line.strip().split('=', 1)[1].strip('"\'')
+                        break
+        except:
+            pass
+    return key
+
+resend.api_key = get_resend_api_key()
 SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://prazeres.preview.emergentagent.com')
 
@@ -55,6 +68,11 @@ async def send_password_reset_email(to_email: str, reset_token: str, customer_na
             </div>
             
             <p style="color: #666; font-size: 14px;">
+                Ou copie e cole este link no seu navegador:<br>
+                <a href="{reset_link}" style="color: #2389a3; word-break: break-all;">{reset_link}</a>
+            </p>
+            
+            <p style="color: #666; font-size: 14px;">
                 Este link expira em <strong>1 hora</strong>.
             </p>
             
@@ -71,6 +89,10 @@ async def send_password_reset_email(to_email: str, reset_token: str, customer_na
     </html>
     """
     
+    # Reload API key if not set
+    if not resend.api_key:
+        resend.api_key = get_resend_api_key()
+    
     params = {
         "from": SENDER_EMAIL,
         "to": [to_email],
@@ -80,9 +102,10 @@ async def send_password_reset_email(to_email: str, reset_token: str, customer_na
     
     try:
         email = await asyncio.to_thread(resend.Emails.send, params)
+        print(f"Email sent successfully: {email}")
         return {"success": True, "email_id": email.get("id")}
     except Exception as e:
-        print(f"Error sending email: {e}")
+        print(f"Error sending email to {to_email}: {e}")
         return {"success": False, "error": str(e)}
 
 async def get_database(request: Request) -> AsyncIOMotorDatabase:
