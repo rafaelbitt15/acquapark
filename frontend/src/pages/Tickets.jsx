@@ -419,7 +419,7 @@ export default function Tickets() {
                         <SelectContent>
                           {availableDates.map((item) => (
                             <SelectItem key={item.date} value={item.date}>
-                              {formatDate(item.date)} - {item.available} ingressos disponíveis
+                              {formatDate(item.date)}
                             </SelectItem>
                           ))}
                         </SelectContent>
