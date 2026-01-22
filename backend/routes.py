@@ -473,3 +473,129 @@ async def get_dashboard_stats(
         'new_contacts': new_contacts,
         'recent_orders': recent_orders
     }
+
+# ============= HERO SLIDES ROUTES =============
+
+@router.get('/api/hero-slides')
+async def get_hero_slides(db: AsyncIOMotorDatabase = Depends(get_database)):
+    """Get all active hero slides ordered by position"""
+    slides = await db.hero_slides.find({'is_active': True}).sort('position', 1).to_list(20)
+    for slide in slides:
+        slide['_id'] = str(slide['_id'])
+    return slides
+
+@router.get('/api/admin/hero-slides')
+async def get_all_hero_slides(
+    current_user: dict = Depends(get_current_admin_user),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """Get all hero slides for admin (including inactive)"""
+    slides = await db.hero_slides.find({}).sort('position', 1).to_list(50)
+    for slide in slides:
+        slide['_id'] = str(slide['_id'])
+    return slides
+
+@router.post('/api/admin/hero-slides')
+async def create_hero_slide(
+    slide_data: dict,
+    current_user: dict = Depends(get_current_admin_user),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """Create a new hero slide"""
+    # Get max position
+    max_pos_slide = await db.hero_slides.find_one({}, sort=[('position', -1)])
+    next_position = (max_pos_slide['position'] + 1) if max_pos_slide else 0
+    
+    slide = {
+        'image_url': slide_data.get('image_url', ''),
+        'title': slide_data.get('title', ''),
+        'subtitle': slide_data.get('subtitle', ''),
+        'button_text': slide_data.get('button_text', 'Comprar Ingressos'),
+        'button_link': slide_data.get('button_link', '/ingressos'),
+        'position': next_position,
+        'is_active': True,
+        'created_at': datetime.utcnow(),
+        'updated_at': datetime.utcnow()
+    }
+    
+    result = await db.hero_slides.insert_one(slide)
+    return {'id': str(result.inserted_id), 'message': 'Slide criado com sucesso'}
+
+@router.put('/api/admin/hero-slides/{slide_id}')
+async def update_hero_slide(
+    slide_id: str,
+    slide_data: dict,
+    current_user: dict = Depends(get_current_admin_user),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """Update a hero slide"""
+    update_fields = {
+        'updated_at': datetime.utcnow()
+    }
+    
+    allowed_fields = ['image_url', 'title', 'subtitle', 'button_text', 'button_link', 'is_active', 'position']
+    for field in allowed_fields:
+        if field in slide_data:
+            update_fields[field] = slide_data[field]
+    
+    result = await db.hero_slides.update_one(
+        {'_id': ObjectId(slide_id)},
+        {'$set': update_fields}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail='Slide não encontrado')
+    
+    return {'message': 'Slide atualizado com sucesso'}
+
+@router.delete('/api/admin/hero-slides/{slide_id}')
+async def delete_hero_slide(
+    slide_id: str,
+    current_user: dict = Depends(get_current_admin_user),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """Delete a hero slide"""
+    result = await db.hero_slides.delete_one({'_id': ObjectId(slide_id)})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail='Slide não encontrado')
+    
+    return {'message': 'Slide removido com sucesso'}
+
+@router.put('/api/admin/hero-slides/reorder')
+async def reorder_hero_slides(
+    order_data: dict,
+    current_user: dict = Depends(get_current_admin_user),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """Reorder hero slides by updating positions"""
+    positions = order_data.get('positions', [])  # List of {id: position}
+    
+    for item in positions:
+        await db.hero_slides.update_one(
+            {'_id': ObjectId(item['id'])},
+            {'$set': {'position': item['position'], 'updated_at': datetime.utcnow()}}
+        )
+    
+    return {'message': 'Ordem atualizada com sucesso'}
+
+@router.post('/api/admin/upload-image')
+async def upload_image(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_admin_user)
+):
+    """Upload an image and return its URL"""
+    # Create uploads directory if it doesn't exist
+    upload_dir = Path('/app/frontend/public/uploads')
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Generate unique filename
+    ext = file.filename.split('.')[-1] if '.' in file.filename else 'jpg'
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    file_path = upload_dir / filename
+    
+    # Save file
+    with open(file_path, 'wb') as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    return {'url': f'/uploads/{filename}', 'filename': filename}
