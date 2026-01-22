@@ -7,7 +7,7 @@ Website completo e pronto para lançamento para o parque aquático "Acqua Park P
 22 de Janeiro de 2026
 
 ## Status do Projeto
-✅ MVP Completo com Sistema de Ingressos
+✅ MVP Completo com Sistema de Ingressos e Gestão de Senhas
 
 ---
 
@@ -16,7 +16,9 @@ Website completo e pronto para lançamento para o parque aquático "Acqua Park P
 ### 1. Website Público
 - [x] Página inicial (Home) com hero, atrações em destaque, depoimentos
 - [x] Página de atrações com filtros por categoria
-- [x] Página de ingressos com seletor de quantidade e data
+- [x] Página de ingressos integrada com banco de dados
+- [x] **Seletor de datas mostra apenas datas com disponibilidade**
+- [x] **Exigência de login antes de comprar ingressos**
 - [x] Página de contato com formulário
 - [x] Política de Privacidade (LGPD)
 - [x] Termos de Uso (LGPD)
@@ -27,8 +29,10 @@ Website completo e pronto para lançamento para o parque aquático "Acqua Park P
 ### 2. Sistema de Clientes
 - [x] Cadastro de clientes (nome, email, telefone, CPF)
 - [x] Login de clientes
+- [x] **Página "Esqueci minha senha"** com recuperação por token
+- [x] **Alteração de senha na conta do cliente**
 - [x] Página "Minha Conta" com histórico de pedidos
-- [x] **Exibição de QR Code do ingresso** para pedidos aprovados
+- [x] Exibição de QR Code do ingresso para pedidos aprovados
 - [x] Código alfanumérico copiável para cada ingresso
 
 ### 3. Painel Administrativo
@@ -115,7 +119,7 @@ Website completo e pronto para lançamento para o parque aquático "Acqua Park P
 ---
 
 ## Testes Realizados
-- **Backend**: 22/22 testes passando (100%)
+- **Backend**: 41/41 testes passando (100%)
 - **Frontend**: Todos os fluxos testados e funcionando
 
 ---
@@ -125,6 +129,10 @@ Website completo e pronto para lançamento para o parque aquático "Acqua Park P
 ### 1. Configuração de Domínio Personalizado
 - [ ] Configurar `www.acquaparkps.com.br` na plataforma Emergent
 - [ ] Orientar usuário sobre DNS e migração do locaweb
+
+### 2. Integração de Email (Para Recuperação de Senha em Produção)
+- [ ] Integrar serviço de email (ex: SendGrid, Resend)
+- [ ] Enviar token de recuperação por email ao invés de retornar na API
 
 ---
 
@@ -147,7 +155,15 @@ Website completo e pronto para lançamento para o parque aquático "Acqua Park P
 
 ## Changelog
 
-### 22/01/2026
+### 22/01/2026 (Sessão 2)
+- ✅ Implementada página "Esqueci Minha Senha" (/esqueci-senha)
+- ✅ Implementada funcionalidade de alteração de senha na conta do cliente
+- ✅ Página de ingressos agora exige login antes de finalizar compra
+- ✅ Seletor de datas no checkout mostra APENAS datas com disponibilidade cadastrada
+- ✅ Página de ingressos agora carrega dados do banco de dados
+- ✅ 19 novos testes de backend criados e passando (total: 41)
+
+### 22/01/2026 (Sessão 1)
 - ✅ Implementado sistema completo de inventário de ingressos
 - ✅ Implementado sistema de validação de ingressos com QR Code
 - ✅ Implementado login de funcionário e página de check-in
