@@ -1,29 +1,58 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
 import { Checkbox } from '../components/ui/checkbox';
 import { Badge } from '../components/ui/badge';
-import { Check, ShoppingCart, CalendarDays, CreditCard } from 'lucide-react';
-import { tickets, mockPurchaseTicket } from '../mock';
+import { Label } from '../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Check, ShoppingCart, CalendarDays, CreditCard, LogIn, AlertCircle } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
+import { useCustomerAuth } from '../stores/customerAuthStore';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
 export default function Tickets() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { customer, token, checkAuth, getAuthHeaders } = useCustomerAuth();
+  
+  const [tickets, setTickets] = useState([]);
+  const [availableDates, setAvailableDates] = useState([]);
   const [cart, setCart] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    document: '',
-    visitDate: '',
-    acceptTerms: false
-  });
+  const [selectedDate, setSelectedDate] = useState('');
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      // Load tickets
+      const ticketsRes = await axios.get(`${API}/tickets`);
+      setTickets(ticketsRes.data);
+      
+      // Load available dates
+      const datesRes = await axios.get(`${API}/available-dates`);
+      setAvailableDates(datesRes.data);
+      
+      // Check authentication
+      const isAuth = await checkAuth();
+      setIsAuthenticated(isAuth);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast({ title: 'Erro', description: 'Erro ao carregar dados', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAddToCart = (ticketId) => {
     setCart(prev => ({
@@ -46,15 +75,31 @@ export default function Tickets() {
 
   const calculateTotal = () => {
     return Object.entries(cart).reduce((total, [ticketId, quantity]) => {
-      const ticket = tickets.find(t => t.id === ticketId);
-      return total + (ticket.price * quantity);
+      const ticket = tickets.find(t => t.ticket_id === ticketId);
+      return total + (ticket ? ticket.price * quantity : 0);
     }, 0);
+  };
+
+  const handleProceedToCheckout = async () => {
+    // Check if user is logged in
+    const isAuth = await checkAuth();
+    if (!isAuth) {
+      toast({
+        title: 'Login Necessário',
+        description: 'Você precisa fazer login para comprar ingressos',
+        variant: 'destructive'
+      });
+      navigate('/login?redirect=/ingressos');
+      return;
+    }
+    setIsAuthenticated(true);
+    setShowCheckout(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.acceptTerms) {
+    if (!acceptTerms) {
       toast({
         title: 'Erro',
         description: 'Você deve aceitar os termos e condições',
@@ -63,39 +108,73 @@ export default function Tickets() {
       return;
     }
 
-    setIsProcessing(true);
-
-    try {
-      const result = await mockPurchaseTicket({
-        ...formData,
-        tickets: cart,
-        total: calculateTotal()
-      });
-
+    if (!selectedDate) {
       toast({
-        title: 'Sucesso!',
-        description: result.message
+        title: 'Erro',
+        description: 'Selecione uma data para a visita',
+        variant: 'destructive'
       });
+      return;
+    }
 
-      // Reset form
-      setCart({});
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        document: '',
-        visitDate: '',
-        acceptTerms: false
-      });
-      setShowCheckout(false);
-
-      setTimeout(() => {
-        navigate('/');
-      }, 2000);
+    // Check availability for selected date
+    const totalQuantity = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
+    try {
+      const availabilityRes = await axios.get(`${API}/check-availability/${selectedDate}?quantity=${totalQuantity}`);
+      if (!availabilityRes.data.available) {
+        toast({
+          title: 'Erro',
+          description: availabilityRes.data.message || 'Data não disponível',
+          variant: 'destructive'
+        });
+        return;
+      }
     } catch (error) {
       toast({
         title: 'Erro',
-        description: 'Erro ao processar compra. Tente novamente.',
+        description: 'Erro ao verificar disponibilidade',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      // Prepare order items
+      const items = Object.entries(cart).map(([ticketId, quantity]) => {
+        const ticket = tickets.find(t => t.ticket_id === ticketId);
+        return {
+          ticketId,
+          quantity,
+          unitPrice: ticket.price
+        };
+      });
+
+      // Create payment preference
+      const response = await axios.post(`${API}/create-payment-preference`, {
+        customer: {
+          name: customer.name,
+          email: customer.email,
+          phone: customer.phone,
+          document: customer.document
+        },
+        items,
+        total_amount: calculateTotal(),
+        visit_date: selectedDate
+      }, { headers: getAuthHeaders() });
+
+      // Redirect to Mercado Pago
+      if (response.data.sandbox_init_point) {
+        window.location.href = response.data.sandbox_init_point;
+      } else if (response.data.init_point) {
+        window.location.href = response.data.init_point;
+      }
+    } catch (error) {
+      console.error('Purchase error:', error);
+      toast({
+        title: 'Erro',
+        description: error.response?.data?.detail || 'Erro ao processar compra. Tente novamente.',
         variant: 'destructive'
       });
     } finally {
@@ -106,8 +185,31 @@ export default function Tickets() {
   const cartItemCount = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
   const total = calculateTotal();
 
+  const formatDate = (dateStr) => {
+    const [year, month, day] = dateStr.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
+  const getTicketIcon = (ticketId) => {
+    if (ticketId === 'adult') return '👨‍👩‍👧‍👦';
+    if (ticketId === 'child') return '👧';
+    if (ticketId === 'family') return '👨‍👩‍👧‍👦';
+    return '🎫';
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col" data-testid="tickets-page">
       {/* Hero Section */}
       <section 
         className="relative h-[400px] flex items-center justify-center text-white"
@@ -130,19 +232,34 @@ export default function Tickets() {
       {/* Tickets Section */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Available Dates Notice */}
+          {availableDates.length === 0 && (
+            <Card className="mb-8 border-yellow-300 bg-yellow-50">
+              <CardContent className="py-4">
+                <div className="flex items-center space-x-3">
+                  <AlertCircle className="h-5 w-5 text-yellow-600" />
+                  <p className="text-yellow-800">
+                    Não há datas disponíveis para compra no momento. Entre em contato conosco para mais informações.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {!showCheckout ? (
             <>
               {/* Tickets Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                 {tickets.map((ticket) => (
                   <Card 
-                    key={ticket.id} 
+                    key={ticket.ticket_id} 
                     className={`relative hover:shadow-xl transition-all ${
-                      ticket.id === 'family' ? 'border-2' : ''
+                      ticket.ticket_id === 'family' ? 'border-2' : ''
                     }`}
-                    style={ticket.id === 'family' ? { borderColor: '#f2ad28' } : {}}
+                    style={ticket.ticket_id === 'family' ? { borderColor: '#f2ad28' } : {}}
+                    data-testid={`ticket-card-${ticket.ticket_id}`}
                   >
-                    {ticket.id === 'family' && (
+                    {ticket.ticket_id === 'family' && (
                       <Badge 
                         className="absolute -top-3 left-1/2 -translate-x-1/2 text-white"
                         style={{ backgroundColor: '#f2ad28' }}
@@ -151,7 +268,7 @@ export default function Tickets() {
                       </Badge>
                     )}
                     <CardHeader className="text-center pb-4">
-                      <div className="text-5xl mb-4">{ticket.icon}</div>
+                      <div className="text-5xl mb-4">{getTicketIcon(ticket.ticket_id)}</div>
                       <CardTitle className="text-2xl" style={{ color: '#2389a3' }}>
                         {ticket.name}
                       </CardTitle>
@@ -175,33 +292,37 @@ export default function Tickets() {
                       </ul>
 
                       <div className="space-y-3">
-                        {cart[ticket.id] > 0 && (
+                        {cart[ticket.ticket_id] > 0 && (
                           <div className="flex items-center justify-center space-x-4 mb-2">
                             <Button 
                               variant="outline"
                               size="sm"
-                              onClick={() => handleRemoveFromCart(ticket.id)}
+                              onClick={() => handleRemoveFromCart(ticket.ticket_id)}
                               className="px-3"
+                              data-testid={`remove-${ticket.ticket_id}`}
                             >
                               −
                             </Button>
-                            <span className="font-semibold">{cart[ticket.id]}</span>
+                            <span className="font-semibold">{cart[ticket.ticket_id]}</span>
                             <Button 
                               variant="outline"
                               size="sm"
-                              onClick={() => handleAddToCart(ticket.id)}
+                              onClick={() => handleAddToCart(ticket.ticket_id)}
                               className="px-3"
+                              data-testid={`add-more-${ticket.ticket_id}`}
                             >
                               +
                             </Button>
                           </div>
                         )}
                         <Button
-                          onClick={() => handleAddToCart(ticket.id)}
+                          onClick={() => handleAddToCart(ticket.ticket_id)}
                           className="w-full text-white font-semibold"
                           style={{ background: 'linear-gradient(135deg, #46bfec 0%, #2389a3 100%)' }}
+                          disabled={availableDates.length === 0}
+                          data-testid={`add-to-cart-${ticket.ticket_id}`}
                         >
-                          {cart[ticket.id] ? 'Adicionar Mais' : 'Adicionar ao Carrinho'}
+                          {cart[ticket.ticket_id] ? 'Adicionar Mais' : 'Adicionar ao Carrinho'}
                         </Button>
                       </div>
                     </CardContent>
@@ -211,7 +332,7 @@ export default function Tickets() {
 
               {/* Cart Summary */}
               {cartItemCount > 0 && (
-                <Card className="max-w-md mx-auto border-2" style={{ borderColor: '#46bfec' }}>
+                <Card className="max-w-md mx-auto border-2" style={{ borderColor: '#46bfec' }} data-testid="cart-summary">
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
                       <ShoppingCart className="h-5 w-5" />
@@ -221,8 +342,8 @@ export default function Tickets() {
                   <CardContent>
                     <div className="space-y-3 mb-4">
                       {Object.entries(cart).map(([ticketId, quantity]) => {
-                        const ticket = tickets.find(t => t.id === ticketId);
-                        return (
+                        const ticket = tickets.find(t => t.ticket_id === ticketId);
+                        return ticket ? (
                           <div key={ticketId} className="flex justify-between items-center">
                             <span className="text-gray-700">
                               {ticket.name} x{quantity}
@@ -231,7 +352,7 @@ export default function Tickets() {
                               R$ {(ticket.price * quantity).toFixed(2)}
                             </span>
                           </div>
-                        );
+                        ) : null;
                       })}
                     </div>
                     <div className="border-t pt-3 mb-4">
@@ -240,12 +361,23 @@ export default function Tickets() {
                         <span style={{ color: '#2389a3' }}>R$ {total.toFixed(2)}</span>
                       </div>
                     </div>
+                    
+                    {!isAuthenticated && (
+                      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center space-x-2 text-blue-700">
+                          <LogIn className="h-4 w-4" />
+                          <span className="text-sm">Faça login para continuar a compra</span>
+                        </div>
+                      </div>
+                    )}
+                    
                     <Button
-                      onClick={() => setShowCheckout(true)}
+                      onClick={handleProceedToCheckout}
                       className="w-full text-white font-semibold text-lg py-6"
                       style={{ background: 'linear-gradient(135deg, #f2ad28 0%, #e69500 100%)' }}
+                      data-testid="proceed-checkout-btn"
                     >
-                      Finalizar Compra
+                      {isAuthenticated ? 'Finalizar Compra' : 'Fazer Login e Comprar'}
                     </Button>
                   </CardContent>
                 </Card>
@@ -253,7 +385,7 @@ export default function Tickets() {
             </>
           ) : (
             /* Checkout Form */
-            <Card className="max-w-2xl mx-auto">
+            <Card className="max-w-2xl mx-auto" data-testid="checkout-form">
               <CardHeader>
                 <CardTitle className="text-2xl" style={{ color: '#2389a3' }}>
                   Finalizar Compra
@@ -261,80 +393,42 @@ export default function Tickets() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Personal Information */}
+                  {/* Customer Info (Read-only) */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg">Seus Dados</h3>
+                    <div className="p-4 bg-gray-50 rounded-lg space-y-2">
+                      <p><strong>Nome:</strong> {customer?.name}</p>
+                      <p><strong>Email:</strong> {customer?.email}</p>
+                      <p><strong>Telefone:</strong> {customer?.phone}</p>
+                      <p><strong>CPF:</strong> {customer?.document}</p>
+                    </div>
+                  </div>
+
+                  {/* Date Selection */}
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg flex items-center space-x-2">
-                      <span>Informações Pessoais</span>
+                      <CalendarDays className="h-5 w-5" style={{ color: '#2389a3' }} />
+                      <span>Selecione a Data da Visita</span>
                     </h3>
-
-                    <div>
-                      <Label htmlFor="name">Nome Completo *</Label>
-                      <Input
-                        id="name"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="João Silva"
-                        required
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="email">Email *</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          placeholder="joao@example.com"
-                          required
-                          className="mt-1"
-                        />
+                    
+                    {availableDates.length > 0 ? (
+                      <Select value={selectedDate} onValueChange={setSelectedDate}>
+                        <SelectTrigger data-testid="date-select">
+                          <SelectValue placeholder="Escolha uma data disponível" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableDates.map((item) => (
+                            <SelectItem key={item.date} value={item.date}>
+                              {formatDate(item.date)} - {item.available} ingressos disponíveis
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p className="text-yellow-800">Não há datas disponíveis para compra.</p>
                       </div>
-
-                      <div>
-                        <Label htmlFor="phone">Telefone *</Label>
-                        <Input
-                          id="phone"
-                          value={formData.phone}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          placeholder="(75) 98138-7765"
-                          required
-                          className="mt-1"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="document">CPF *</Label>
-                        <Input
-                          id="document"
-                          value={formData.document}
-                          onChange={(e) => setFormData({ ...formData, document: e.target.value })}
-                          placeholder="000.000.000-00"
-                          required
-                          className="mt-1"
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="visitDate" className="flex items-center space-x-1">
-                          <CalendarDays className="h-4 w-4" />
-                          <span>Data da Visita *</span>
-                        </Label>
-                        <Input
-                          id="visitDate"
-                          type="date"
-                          value={formData.visitDate}
-                          onChange={(e) => setFormData({ ...formData, visitDate: e.target.value })}
-                          required
-                          className="mt-1"
-                          min={new Date().toISOString().split('T')[0]}
-                        />
-                      </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* Order Summary */}
@@ -342,13 +436,13 @@ export default function Tickets() {
                     <h3 className="font-semibold text-lg mb-4">Resumo do Pedido</h3>
                     <div className="space-y-2 mb-4">
                       {Object.entries(cart).map(([ticketId, quantity]) => {
-                        const ticket = tickets.find(t => t.id === ticketId);
-                        return (
+                        const ticket = tickets.find(t => t.ticket_id === ticketId);
+                        return ticket ? (
                           <div key={ticketId} className="flex justify-between text-sm">
                             <span>{ticket.name} x{quantity}</span>
                             <span>R$ {(ticket.price * quantity).toFixed(2)}</span>
                           </div>
-                        );
+                        ) : null;
                       })}
                     </div>
                     <div className="border-t pt-3 flex justify-between font-bold text-lg">
@@ -361,11 +455,19 @@ export default function Tickets() {
                   <div className="flex items-start space-x-2">
                     <Checkbox
                       id="terms"
-                      checked={formData.acceptTerms}
-                      onCheckedChange={(checked) => setFormData({ ...formData, acceptTerms: checked })}
+                      checked={acceptTerms}
+                      onCheckedChange={(checked) => setAcceptTerms(checked)}
+                      data-testid="accept-terms"
                     />
                     <Label htmlFor="terms" className="text-sm cursor-pointer">
-                      Aceito os termos e condições e política de cancelamento
+                      Aceito os{' '}
+                      <Link to="/termos-de-uso" className="text-cyan-600 hover:underline" target="_blank">
+                        termos e condições
+                      </Link>{' '}
+                      e{' '}
+                      <Link to="/politica-privacidade" className="text-cyan-600 hover:underline" target="_blank">
+                        política de privacidade
+                      </Link>
                     </Label>
                   </div>
 
@@ -377,14 +479,16 @@ export default function Tickets() {
                       onClick={() => setShowCheckout(false)}
                       className="flex-1"
                       disabled={isProcessing}
+                      data-testid="back-btn"
                     >
                       Voltar
                     </Button>
                     <Button
                       type="submit"
-                      disabled={isProcessing}
+                      disabled={isProcessing || availableDates.length === 0 || !selectedDate}
                       className="flex-1 text-white font-semibold"
                       style={{ background: 'linear-gradient(135deg, #f2ad28 0%, #e69500 100%)' }}
+                      data-testid="pay-btn"
                     >
                       {isProcessing ? (
                         'Processando...'
