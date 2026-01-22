@@ -71,6 +71,7 @@ export default function AdminLogin() {
                 placeholder="seu@email.com"
                 required
                 disabled={isLoading}
+                data-testid="admin-login-email"
               />
             </div>
 
