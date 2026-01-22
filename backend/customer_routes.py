@@ -113,6 +113,111 @@ async def get_customer_info(
         'document': customer['document']
     }
 
+# ============= CUSTOMER PASSWORD MANAGEMENT =============
+
+@router.post('/api/customers/change-password')
+async def change_customer_password(
+    password_data: dict,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        raise HTTPException(status_code=401, detail='Token não fornecido')
+    
+    token = auth_header.split(' ')[1]
+    payload = decode_access_token(token)
+    
+    if not payload or payload.get('type') != 'customer':
+        raise HTTPException(status_code=401, detail='Token inválido')
+    
+    current_password = password_data.get('current_password')
+    new_password = password_data.get('new_password')
+    
+    if not current_password or not new_password:
+        raise HTTPException(status_code=400, detail='Senha atual e nova senha são obrigatórias')
+    
+    if len(new_password) < 6:
+        raise HTTPException(status_code=400, detail='A nova senha deve ter pelo menos 6 caracteres')
+    
+    customer = await db.customers.find_one({'email': payload['sub']})
+    if not customer:
+        raise HTTPException(status_code=404, detail='Cliente não encontrado')
+    
+    if not verify_password(current_password, customer['hashed_password']):
+        raise HTTPException(status_code=400, detail='Senha atual incorreta')
+    
+    await db.customers.update_one(
+        {'email': payload['sub']},
+        {'$set': {'hashed_password': get_password_hash(new_password)}}
+    )
+    
+    return {'message': 'Senha alterada com sucesso'}
+
+@router.post('/api/customers/forgot-password')
+async def forgot_password(
+    data: dict,
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    email = data.get('email')
+    if not email:
+        raise HTTPException(status_code=400, detail='Email é obrigatório')
+    
+    customer = await db.customers.find_one({'email': email})
+    if not customer:
+        # Return success even if email not found (security)
+        return {'message': 'Se o email existir, você receberá instruções de recuperação'}
+    
+    # Generate reset token
+    reset_token = secrets.token_urlsafe(32)
+    reset_expires = datetime.utcnow().timestamp() + 3600  # 1 hour
+    
+    await db.customers.update_one(
+        {'email': email},
+        {'$set': {
+            'reset_token': reset_token,
+            'reset_expires': reset_expires
+        }}
+    )
+    
+    # In production, send email here
+    # For now, return the token (REMOVE IN PRODUCTION)
+    return {
+        'message': 'Se o email existir, você receberá instruções de recuperação',
+        'reset_token': reset_token  # REMOVE IN PRODUCTION - only for testing
+    }
+
+@router.post('/api/customers/reset-password')
+async def reset_password(
+    data: dict,
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    token = data.get('token')
+    new_password = data.get('new_password')
+    
+    if not token or not new_password:
+        raise HTTPException(status_code=400, detail='Token e nova senha são obrigatórios')
+    
+    if len(new_password) < 6:
+        raise HTTPException(status_code=400, detail='A senha deve ter pelo menos 6 caracteres')
+    
+    customer = await db.customers.find_one({'reset_token': token})
+    if not customer:
+        raise HTTPException(status_code=400, detail='Token inválido ou expirado')
+    
+    if customer.get('reset_expires', 0) < datetime.utcnow().timestamp():
+        raise HTTPException(status_code=400, detail='Token expirado')
+    
+    await db.customers.update_one(
+        {'_id': customer['_id']},
+        {
+            '$set': {'hashed_password': get_password_hash(new_password)},
+            '$unset': {'reset_token': '', 'reset_expires': ''}
+        }
+    )
+    
+    return {'message': 'Senha redefinida com sucesso'}
+
 # ============= CUSTOMER ORDERS =============
 
 @router.get('/api/customers/my-orders')
