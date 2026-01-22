@@ -26,6 +26,7 @@ import ParkInfoManager from './pages/admin/ParkInfoManager';
 import TestimonialsManager from './pages/admin/TestimonialsManager';
 import FAQsManager from './pages/admin/FAQsManager';
 import MercadoPagoConfig from './pages/admin/MercadoPagoConfig';
+import HeroSlidesManager from './pages/admin/HeroSlidesManager';
 import ProtectedRoute from './pages/admin/ProtectedRoute';
 import { Toaster } from './components/ui/sonner';
 
@@ -112,6 +113,7 @@ function App() {
             </ProtectedRoute>
           }>
             <Route path="dashboard" element={<Dashboard />} />
+            <Route path="hero-slides" element={<HeroSlidesManager />} />
             <Route path="attractions" element={<AttractionsManager />} />
             <Route path="tickets" element={<TicketsManager />} />
             <Route path="availability" element={<AvailabilityManager />} />
