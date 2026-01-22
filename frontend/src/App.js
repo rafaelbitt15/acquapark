@@ -12,6 +12,7 @@ import TermsOfService from './pages/TermsOfService';
 import CustomerRegister from './pages/CustomerRegister';
 import CustomerLogin from './pages/CustomerLogin';
 import CustomerAccount from './pages/CustomerAccount';
+import ForgotPassword from './pages/ForgotPassword';
 import StaffLogin from './pages/StaffLogin';
 import CheckIn from './pages/CheckIn';
 import AdminLogin from './pages/admin/AdminLogin';
@@ -97,6 +98,7 @@ function App() {
           <Route path="/cadastro" element={<CustomerRegister />} />
           <Route path="/login" element={<CustomerLogin />} />
           <Route path="/minha-conta" element={<CustomerAccount />} />
+          <Route path="/esqueci-senha" element={<ForgotPassword />} />
 
           {/* Staff Routes */}
           <Route path="/funcionario/login" element={<StaffLogin />} />
