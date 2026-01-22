@@ -168,6 +168,8 @@ Website completo e pronto para lançamento para o parque aquático "Acqua Park P
 - ✅ Configuração de título, subtítulo, botão e link para cada slide
 - ✅ Navegação com setas e indicadores (dots)
 - ✅ Reordenação de slides via interface
+- ✅ **Implementado gerenciamento de Estatísticas do site** (`/admin/site-stats`)
+- ✅ **Corrigido problema das imagens das atrações na página inicial**
 
 ### 22/01/2026 (Sessão 2)
 - ✅ Implementada página "Esqueci Minha Senha" (/esqueci-senha)
