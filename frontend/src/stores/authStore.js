@@ -33,6 +33,11 @@ export const useAuth = create(
         set({ token: null, user: null });
       },
       
+      getAuthHeaders: () => {
+        const token = get().token;
+        return { Authorization: `Bearer ${token}` };
+      },
+      
       checkAuth: async () => {
         const token = get().token;
         if (!token) return false;
