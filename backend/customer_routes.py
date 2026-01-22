@@ -254,12 +254,19 @@ async def forgot_password(
         }}
     )
     
-    # In production, send email here
-    # For now, return the token (REMOVE IN PRODUCTION)
-    return {
-        'message': 'Se o email existir, você receberá instruções de recuperação',
-        'reset_token': reset_token  # REMOVE IN PRODUCTION - only for testing
-    }
+    # Send password reset email
+    email_result = await send_password_reset_email(
+        to_email=email,
+        reset_token=reset_token,
+        customer_name=customer.get('name', 'Cliente')
+    )
+    
+    if email_result.get('success'):
+        return {'message': 'Email de recuperação enviado! Verifique sua caixa de entrada.'}
+    else:
+        # Log error but don't expose to user
+        print(f"Email sending failed: {email_result.get('error')}")
+        return {'message': 'Se o email existir, você receberá instruções de recuperação'}
 
 @router.post('/api/customers/reset-password')
 async def reset_password(
